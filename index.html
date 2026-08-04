@@ -76,17 +76,48 @@ body {
 /* ============================================================
    キャラ・オーバーレイ（配信のワイプ。局面で表情が変わる）
    ============================================================ */
-#chara {
-  position: fixed; z-index: 3; pointer-events: none;
+/* 吹き出しと立ち絵をまとめて画面隅に固定する。
+   z-index は #stage(4) より上。下半分は各画面で空けてあるので UI は隠さない。 */
+#chara-wrap {
+  position: fixed; z-index: 5; pointer-events: none;
   bottom: 0; left: 0;
+  display: flex; flex-direction: column; align-items: flex-start;
+  max-width: 100%;
+}
+#chara-wrap.side-right { left: auto; right: 0; align-items: flex-end; }
+
+/* --- 吹き出し（キャラのセリフはすべてここから出す） --- */
+#chara-talk {
+  position: relative;
+  margin: 0 12px 14px;
+  max-width: min(74vw, 330px);
+  background: #fff; border: 3px solid var(--ink);
+  padding: 8px 12px; font-size: 12.5px; line-height: 1.55;
+  opacity: 0; transform: translateY(6px) scale(.96); transform-origin: bottom left;
+  transition: opacity 200ms ease, transform 200ms ease;
+  will-change: transform, opacity;
+}
+#chara-talk.on { opacity: 1; transform: translateY(0) scale(1); }
+#chara-talk::after {            /* しっぽ（外側の黒） */
+  content: ""; position: absolute; left: 18px; top: 100%;
+  border: 10px solid transparent; border-bottom: 0; border-top-color: var(--ink);
+}
+#chara-talk::before {           /* しっぽ（内側の白） */
+  content: ""; position: absolute; left: 22px; top: calc(100% - 4px);
+  border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; z-index: 1;
+}
+#chara-wrap.side-right #chara-talk { transform-origin: bottom right; }
+#chara-wrap.side-right #chara-talk::after  { left: auto; right: 18px; }
+#chara-wrap.side-right #chara-talk::before { left: auto; right: 22px; }
+
+#chara {
+  position: relative;
   width: min(34vw, 180px);
   opacity: 0; transform: translate3d(-8px, 16px, 0);
   transition: opacity 300ms ease, transform 300ms ease, width 300ms ease;
   will-change: transform, opacity;
 }
 #chara.on { opacity: 1; transform: translate3d(0,0,0); }
-#chara.side-right { left: auto; right: 0; transform: translate3d(8px, 16px, 0); }
-#chara.side-right.on { transform: translate3d(0,0,0); }
 #chara.mini { width: min(22vw, 104px); opacity: .95; }
 /* クラス名は .pop（タップ粒子）と衝突させないこと。あちらは position:absolute; top:50% を持つ */
 #chara.bump { animation: charapop 420ms cubic-bezier(.2,1.6,.4,1); }
@@ -221,18 +252,13 @@ body {
 .tug-pct .f { color: var(--foe-dark); }
 .tug-pct .m { color: var(--me); }
 
+.vs-mark { font-family: var(--font-title); font-size: 13px; color: var(--me); letter-spacing: .1em; flex: none; }
 .battle-mid { flex: 1; width: 100%; display: grid; place-items: center; position: relative; }
 #phase-cry { font-size: clamp(28px, 10vw, 62px); text-align: center; transform: rotate(-3deg); will-change: transform, opacity; }
 #phase-cry.beat { animation: cryin 380ms cubic-bezier(.2,1.5,.4,1); }
 @keyframes cryin { 0% { opacity: .2; transform: rotate(-3deg) scale(1.35);} 100% { opacity: 1; transform: rotate(-3deg) scale(1);} }
 #tap-count { margin-top: 12px; font-family: var(--font-title); font-size: 14px; opacity: .72; text-align: center; }
-#talk {
-  margin-top: 9px; font-size: 12px; text-align: center; min-height: 18px;
-  background: #fff; border: 3px solid var(--ink); padding: 6px 12px;
-  max-width: 300px; margin-left: auto; margin-right: auto;
-  clip-path: polygon(0 0, 100% 0, 100% 78%, 93% 100%, 0 100%);
-}
-.streak-mini { width: 100%; max-width: 560px; text-align: left; font-family: var(--font-title); font-size: 11px; opacity: .65; }
+.streak-mini { width: 100%; max-width: 560px; text-align: right; font-family: var(--font-title); font-size: 11px; opacity: .65; }
 .streak-mini .n { font-size: 16px; color: var(--me); opacity: 1; }
 
 .pop {
@@ -313,7 +339,7 @@ body {
 #res-rate-sub { font-size: 11px; opacity: .55; min-height: 14px; }
 #res-delta { font-family: var(--font-title); font-size: 16px; color: var(--foe-dark); min-height: 20px; }
 
-#res-talk { font-size: 12px; opacity: .8; min-height: 18px; text-align: center; }
+
 #res-btns { opacity: 0; pointer-events: none; transition: opacity 320ms ease; }
 #res-btns.on { opacity: 1; pointer-events: auto; }
 
@@ -338,13 +364,13 @@ body {
 .rank-block { margin-top: 4px; text-align: center; }
 .rank-block .rk { font-family: var(--font-title); font-size: clamp(24px, 7.6vw, 38px); font-weight: 900; color: var(--foe-dark); }
 .rank-block .of { margin-top: 2px; font-size: 10.5px; opacity: .58; }
-#final-talk { font-size: 13px; text-align: center; line-height: 1.7; padding: 0 12px; opacity: .85; }
+
 
 #share-canvas { display: none; }
 
 /* ================= スマホ最適化 ================= */
 /* 最終成績はスクロールするので、左下のキャラに最後の要素が潜り込まないよう逃がす */
-#final { padding-bottom: calc(min(22vw, 104px) * 1.34 + 24px); }
+#final { padding-bottom: calc(min(22vw, 104px) * 1.34 + 92px); }  /* 左下のキャラ＋吹き出しを避ける */
 
 /* 縦が短い端末（iPhone SE 等 667px 以下）: 余白と文字を詰める */
 @media (max-height: 700px) {
@@ -387,14 +413,17 @@ body {
 <div id="blobs"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
 <div id="danger"></div>
 
-<!-- キャラ・オーバーレイ -->
-<div id="chara">
-  <img id="chara-img" alt="">
-  <div id="chara-ph">
-    <div class="ph-top" id="ph-top">NOW PLAYING</div>
-    <div class="ph-face" id="ph-face">・_・</div>
-    <div class="ph-name" id="ph-name">ラコ</div>
-    <div class="ph-tag" id="ph-tag">通常</div>
+<!-- キャラ・オーバーレイ（吹き出し＋立ち絵） -->
+<div id="chara-wrap">
+  <div id="chara-talk"><span id="chara-talk-text"></span></div>
+  <div id="chara">
+    <img id="chara-img" alt="">
+    <div id="chara-ph">
+      <div class="ph-top" id="ph-top">NOW PLAYING</div>
+      <div class="ph-face" id="ph-face">・_・</div>
+      <div class="ph-name" id="ph-name">ラコ</div>
+      <div class="ph-tag" id="ph-tag">通常</div>
+    </div>
   </div>
 </div>
 
@@ -436,9 +465,17 @@ body {
 
   <!-- ============ バトル ============ -->
   <section class="screen" id="battle">
-    <!-- 相手は右側に統一（バーの右＝相手、左＝自分） -->
+    <!-- 両者を上に並べ、下半分はキャラ・オーバーレイのために空ける。
+         左＝自分 / 右＝相手 で、そのまま下の塗り率バーの左右に対応する。 -->
     <div class="side">
-      <div class="side-tag">OPPONENT</div>
+      <div class="fighter">
+        <div class="av" id="me-avatar">ラ</div>
+        <div>
+          <div class="f-name" id="me-name">ラコ</div>
+          <div class="f-title" id="me-title">グラニュー級 3</div>
+        </div>
+      </div>
+      <div class="vs-mark">VS</div>
       <div class="fighter right">
         <div class="av foe" id="npc-avatar">?</div>
         <div>
@@ -464,20 +501,10 @@ body {
       <div>
         <div id="phase-cry" class="out">押し合い!!</div>
         <div id="tap-count">0 タップ</div>
-        <div id="talk"></div>
       </div>
     </div>
 
-    <!-- 自分は左側。右下はキャラ・オーバーレイの定位置なので空けておく -->
-    <div class="side" style="justify-content:flex-start">
-      <div class="fighter">
-        <div class="av" id="me-avatar">ラ</div>
-        <div>
-          <div class="f-name" id="me-name">ラコ</div>
-          <div class="f-title" id="me-title">グラニュー級 3</div>
-        </div>
-      </div>
-    </div>
+    <!-- 左下はキャラの定位置。連勝表示は右下へ逃がす -->
     <div class="streak-mini" id="streak-mini">1戦目</div>
   </section>
 
@@ -526,8 +553,6 @@ body {
         <div id="res-rate-sub"></div>
         <div id="res-delta"></div>
       </div>
-
-      <div id="res-talk"></div>
     </div>
 
     <div class="btns" id="res-btns">
@@ -543,7 +568,6 @@ body {
     <div id="new-record" style="display:none">★ 自己ベスト更新 ★</div>
 
     <div class="card sheet">
-      <div class="row"><span class="k">使用キャラ</span><span class="v" id="f-char">ラコ</span></div>
       <div class="row"><span class="k">到達階級</span><span class="v big" id="f-rank">グラニュー級 3</span></div>
       <div class="row"><span class="k" id="f-streak-key">勝利数</span><span class="v" id="f-streak">0</span></div>
       <div class="row"><span class="k">最終レート</span><span class="v" id="f-rate">—</span></div>
@@ -554,7 +578,7 @@ body {
       </div>
     </div>
 
-    <div id="final-talk"></div>
+
 
     <div class="btns">
       <button class="btn" id="btn-again">もう一度</button>
@@ -623,7 +647,7 @@ const CONFIG = {
      side: "left" | "right" */
   chara: {
     enabled: true,
-    side: "right",          // 自分の情報は左に置いたので、キャラは右下（配信のワイプ位置）
+    side: "left",           // 右利きの親指で隠れないよう左下に置く
     dir: "images/",
     images: {
       rako: { normal: "rako_normal.png", surprise: "rako_surprise.png", happy: "rako_happy.png", bored: "rako_bored.png" },
@@ -961,11 +985,11 @@ const el = {
   resRank: $("res-rank"), resGaugeNum: $("res-gauge-num"), resGain: $("res-gain"),
   rankGauge: $("rank-gauge"), rankTicks: $("rank-ticks"), rankGlow: $("rank-glow"),
   resRateBlock: $("res-rate-block"), resRate: $("res-rate"), resRateSub: $("res-rate-sub"), resDelta: $("res-delta"),
-  resTalk: $("res-talk"), resBtns: $("res-btns"), flash: $("flash"),
+  charaWrap: $("chara-wrap"), charaTalk: $("chara-talk"), charaTalkText: $("chara-talk-text"), resBtns: $("res-btns"), flash: $("flash"),
 
   seasonTitle: $("season-title"), newRecord: $("new-record"),
-  fChar: $("f-char"), fRank: $("f-rank"), fStreak: $("f-streak"), fStreakKey: $("f-streak-key"), fRate: $("f-rate"),
-  fRankPos: $("f-rankpos"), fParticipants: $("f-participants"), finalTalk: $("final-talk"),
+  fRank: $("f-rank"), fStreak: $("f-streak"), fStreakKey: $("f-streak-key"), fRate: $("f-rate"),
+  fRankPos: $("f-rankpos"), fParticipants: $("f-participants"),
   canvas: $("share-canvas")
 };
 
@@ -1009,10 +1033,17 @@ function applyBg(wins) {
    キャラ・オーバーレイ
    ============================================================ */
 function charaShow(on, mini) {
-  if (!CONFIG.chara.enabled) { el.chara.classList.remove("on"); return; }
-  el.chara.classList.toggle("side-right", CONFIG.chara.side === "right");
+  if (!on) charaSay("");                    // 隠すときは吹き出しも一緒に消す
+  if (!CONFIG.chara.enabled) { el.chara.classList.remove("on"); charaSay(""); return; }
+  el.charaWrap.classList.toggle("side-right", CONFIG.chara.side === "right");
   el.chara.classList.toggle("mini", !!mini);
   el.chara.classList.toggle("on", !!on);
+}
+/* キャラのセリフはすべて吹き出しから出す（画面中央にコメントを置かない） */
+function charaSay(text) {
+  if (!text || !CONFIG.chara.enabled) { el.charaTalk.classList.remove("on"); return; }
+  el.charaTalkText.textContent = text;
+  el.charaTalk.classList.add("on");
 }
 function charaFace(expr, bump) {
   if (!CONFIG.chara.enabled || !S.mode) return;
@@ -1136,7 +1167,7 @@ function beginBattle() {
   el.meTitle.textContent = rankLabel(p) + (p.master ? "  RATE " + rateStringFor(p.mw) : "");
   el.streakMini.innerHTML = streakMiniHTML(S.streak);
   el.tapCount.textContent = "0 タップ";
-  el.talk.textContent = "";
+  charaSay("");
 
   Tug.base = 0; Tug.boost = 0; Tug.from = 0; Tug.to = 0; Tug.dur = 1; Tug.t0 = performance.now();
   S.lastPct = -1;
@@ -1168,7 +1199,7 @@ function nextPhase() {
 
   el.phaseCry.textContent = CONFIG.cries[ph.key];
   el.phaseCry.classList.remove("beat"); void el.phaseCry.offsetWidth; el.phaseCry.classList.add("beat");
-  el.talk.textContent = pick(CONFIG.talk[S.mode.key][ph.key]);
+  charaSay(pick(CONFIG.talk[S.mode.key][ph.key]));
   charaFace(PHASE_FACE[ph.key], true);
   Sound.phase(ph.key);
   if (ph.key === "pinch") vibrate([0, 18, 60, 18]);
@@ -1270,7 +1301,7 @@ function toResult() {
   el.promoBanner.classList.remove("go");
   el.promoBanner.style.display = "none";
   el.resGain.classList.remove("on", "x2");
-  el.resTalk.textContent = "";
+  charaSay("");
 
   if (prev.master) {
     el.resRank.innerHTML = rankHTML(prev);
@@ -1307,7 +1338,7 @@ function toResult() {
       CONFIG.fx.rateBaseMs + CONFIG.fx.ratePerDigitMs * (Math.floor(newExp) + 1));
     seq(t, () => {
       el.resDelta.textContent = "+ " + renderRateString(prevExp, prev.mw <= CONFIG.exactMasterWins ? exactRateOf(prev.mw) : null);
-      el.resTalk.textContent = pick(CONFIG.talk[S.mode.key].win);
+      charaSay(pick(CONFIG.talk[S.mode.key].win));
       countUp(prevExp, newExp, rateDur * 0.75);
       Sound.gauge(6);
     });
@@ -1325,7 +1356,7 @@ function toResult() {
       el.resGaugeNum.textContent = label;
       Sound.gauge(promoting ? 8 : 4);
       vibrate(bonus ? [0, 14, 24, 14, 24, 22] : [0, 14, 30, 22]);
-      if (!promoting) el.resTalk.textContent = pick(CONFIG.talk[S.mode.key].win);
+      if (!promoting) charaSay(pick(CONFIG.talk[S.mode.key].win));
     });
     t += CONFIG.fx.gaugeMs + CONFIG.fx.holdMs;
 
@@ -1345,7 +1376,7 @@ function toResult() {
           S.lastResLen = -1;
           paintRate(rateStringFor(0), "");
           el.resDelta.textContent = "RATE 10 から";
-          el.resTalk.textContent = pick(CONFIG.talk[S.mode.key].master);
+          charaSay(pick(CONFIG.talk[S.mode.key].master));
           Sound.master();
           vibrate([0, 40, 60, 40, 60, 120]);
         } else {
@@ -1355,7 +1386,7 @@ function toResult() {
           // 余ったポイントは次のティアに繰り越す
           setGauge(el.rankGauge, now.pip / now.need, 0);
           el.resGaugeNum.textContent = now.pip + " / " + now.need;
-          el.resTalk.textContent = pick(CONFIG.talk[S.mode.key].promo);
+          charaSay(pick(CONFIG.talk[S.mode.key].promo));
           if (kind === "rankup") { Sound.rankUp(); vibrate([0, 30, 40, 30, 40, 60]); }
           else { Sound.tierUp(); vibrate([0, 20, 40, 30]); }
         }
@@ -1439,14 +1470,14 @@ function endSeason() {
 
   const rk = fakeRanking(streak);
   el.seasonTitle.textContent = new Date().getFullYear() + " SEASON 最終成績";
-  el.fChar.textContent = S.mode.name;
+
   el.fRank.textContent = rankLabel(p);
   el.fStreakKey.textContent = streak >= 2 ? "最高連勝" : "勝利数";
   el.fStreak.textContent = streak.toLocaleString("en-US");
   el.fRate.textContent = p.master ? rateStringFor(p.mw) : "— （糖蜜級未到達）";
   el.fRankPos.textContent = "全国 " + rk.rank.toLocaleString("en-US") + " 位";
   el.fParticipants.textContent = "参加者 " + rk.participants.toLocaleString("en-US") + " 人中";
-  el.finalTalk.textContent = pick(CONFIG.talk[S.mode.key].end);
+  charaSay(pick(CONFIG.talk[S.mode.key].end));   // セリフはキャラの吹き出しから
   show("final");
 }
 function fakeRanking(streak) {
@@ -1534,10 +1565,11 @@ function shareCard() {
    ============================================================ */
 el.screens.battle.addEventListener("touchstart", (e) => { e.preventDefault(); onTap(); }, { passive: false });
 el.screens.battle.addEventListener("mousedown", onTap);
-// 決着カット・リザルトはタップで飛ばせない。次に進むのはボタンだけ。
-[el.screens.clash, el.screens.result].forEach(node => {
-  node.addEventListener("touchstart", (e) => { e.preventDefault(); }, { passive: false });
-});
+/* 決着カット・リザルトはタップで飛ばせない（進むのはボタンだけ）。
+   ここで touchstart を preventDefault してはいけない。タッチ端末では合成 click が
+   生成されなくなり、内側のボタンが一切反応しなくなる。
+   タップで進まないのは skip ハンドラを持たないことで既に達成されており、
+   ダブルタップズームは body の touch-action: manipulation が抑えている。 */
 window.addEventListener("keydown", (e) => {
   if (e.code !== "Space" && e.code !== "Enter") return;
   if (S.state === "battle") { e.preventDefault(); onTap(); }
