@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>しゅがけレーティング — 対戦ゲーム系デザイン案 D / E / F</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+:root {
+  --sc-bg:      #fce4ec;
+  --sc-ink:     #2b1f24;
+  --sc-accent:  #e91e63;
+  --sc-accent2: #ff4081;
+  --sc-border:  #f48fb1;
+  /* 新規: 対戦相手カラー。2色が対立しないと対戦画面にならない */
+  --me:   #ff2d78;
+  --foe:  #16d2c3;
+  --font-title: 'DotGothic16', monospace, sans-serif;
+  --font-main:  'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-main); background: #e9e0e4; color: var(--sc-ink); padding: 26px 16px 70px; line-height: 1.7; }
+.page-head { max-width: 1180px; margin: 0 auto 30px; }
+.page-head h1 { font-family: var(--font-title); font-size: 1.45rem; color: var(--sc-accent); letter-spacing: 2px; margin-bottom: 8px; }
+.page-head p { font-size: .86rem; max-width: 780px; }
+.tokens { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+.tok { font-family: var(--font-title); font-size: .66rem; padding: 4px 9px; border-radius: 5px; border: 1px solid var(--sc-border); background: #fff; }
+.tok i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 26px; align-items: start; }
+.col > h2 { font-family: var(--font-title); font-size: 1.02rem; color: var(--sc-accent); letter-spacing: 1px; margin-bottom: 3px; }
+.col > .sub { font-size: .77rem; opacity: .75; margin-bottom: 11px; }
+.col ul { font-size: .77rem; margin: 0 0 15px 1.1em; }
+.col ul li { margin-bottom: 3px; }
+.pair { display: flex; gap: 12px; flex-wrap: wrap; }
+.cap { font-family: var(--font-title); font-size: .6rem; letter-spacing: 1.5px; opacity: .6; margin: 8px 0 5px; }
+.frame { width: 292px; height: 520px; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(60,30,45,.24); position: relative; display: flex; flex-direction: column; font-size: 13px; }
+
+/* ==========================================================
+   D案 — シュガースプラッシュ（塗り／斜め／アウトライン）
+   ========================================================== */
+.D {
+  background-color: var(--sc-bg);
+  background-image:
+    repeating-linear-gradient(-24deg, rgba(255,255,255,.5) 0 26px, transparent 26px 62px),
+    linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px);
+  background-size: auto, 20px 20px, 20px 20px;
+  padding: 14px 13px; gap: 10px; align-items: center; justify-content: center;
+}
+/* 飛沫 */
+.D::before, .D::after {
+  content: ""; position: absolute; border-radius: 50%; pointer-events: none;
+}
+.D::before { width: 150px; height: 120px; background: var(--me); opacity: .18; top: -30px; right: -34px;
+  border-radius: 62% 38% 46% 54% / 55% 42% 58% 45%; }
+.D::after  { width: 130px; height: 110px; background: var(--foe); opacity: .16; bottom: -26px; left: -30px;
+  border-radius: 44% 56% 62% 38% / 48% 60% 40% 52%; }
+.D .z { position: relative; z-index: 2; width: 100%; }
+.d-out {
+  font-family: var(--font-title); font-weight: 900; color: #fff;
+  -webkit-text-stroke: 4px var(--sc-ink); paint-order: stroke fill;
+  text-shadow: 4px 5px 0 var(--me);
+}
+.d-streak { font-size: 46px; line-height: 1; transform: rotate(-4deg); text-align: center; }
+.d-streak small { font-size: 19px; }
+.d-tele {
+  background: var(--sc-ink); color: #fff; font-family: var(--font-title); font-size: 15px;
+  letter-spacing: 1px; text-align: center; padding: 8px 6px;
+  transform: rotate(-3deg); width: 112%; margin-left: -6%;
+  clip-path: polygon(0 12%, 100% 0, 100% 88%, 0 100%);
+  box-shadow: 0 5px 0 var(--me);
+}
+.d-tele b { color: var(--foe); }
+.d-tele small { display: block; font-size: 9.5px; opacity: .85; letter-spacing: 0; }
+.d-card {
+  background: #fff; border: 3px solid var(--sc-ink); padding: 12px 12px 14px;
+  clip-path: polygon(0 0, 100% 0, 100% 84%, 92% 100%, 0 100%);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.d-rank { font-family: var(--font-title); font-size: 17px; font-weight: 900; display: flex; justify-content: space-between; align-items: baseline; }
+.d-rank b { color: var(--me); }
+.d-rank i { font-style: normal; font-size: 10px; opacity: .55; }
+/* 塗り率バー */
+.d-tug { position: relative; height: 26px; border: 3px solid var(--sc-ink); background: #fff; overflow: hidden; }
+.d-tug .foe { position: absolute; inset: 0; background: var(--foe); }
+.d-tug .me  { position: absolute; inset: 0; background: var(--me);
+  clip-path: polygon(38% 0, 100% 0, 100% 100%, 34% 100%, 41% 76%, 33% 52%, 42% 28%); }
+.d-pct { display: flex; justify-content: space-between; font-family: var(--font-title); font-size: 11px; margin-top: 3px; }
+.d-pct .f { color: #0a8f85; } .d-pct .m { color: var(--me); }
+.d-talk { font-size: 10.5px; text-align: center; opacity: .8; }
+.d-btns { display: flex; gap: 8px; width: 100%; }
+.d-btn {
+  flex: 1; font-family: var(--font-title); font-size: 12.5px; padding: 12px 0; color: #fff;
+  background: var(--me); border: 3px solid var(--sc-ink); transform: rotate(-1.4deg);
+  box-shadow: 0 4px 0 var(--sc-ink);
+  clip-path: polygon(3% 0, 100% 0, 97% 100%, 0 100%);
+}
+.d-btn.ghost { background: #fff; color: var(--sc-ink); transform: rotate(1.4deg); }
+.D.battle { justify-content: space-between; }
+.d-side { display: flex; align-items: center; gap: 8px; font-family: var(--font-title); font-size: 11px; }
+.d-av { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--sc-ink); display: grid; place-items: center; color: #fff; font-size: 13px; }
+.d-cry { font-size: 30px; text-align: center; transform: rotate(-3deg); }
+
+/* ==========================================================
+   E案 — シュガーランクマッチ（メダル／プレート／カットイン）
+   ========================================================== */
+.E {
+  background: radial-gradient(120% 80% at 50% -10%, #6b2c47 0%, #34202b 55%, #1d1319 100%);
+  color: #fff; justify-content: space-between;
+}
+.E .e-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px),
+                    linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.e-plate {
+  background: linear-gradient(90deg, rgba(255,45,120,.92), rgba(233,30,99,.72));
+  padding: 8px 13px; font-family: var(--font-title); font-size: 10.5px; letter-spacing: 1.5px;
+  display: flex; justify-content: space-between; align-items: center;
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
+  position: relative; z-index: 2;
+}
+.e-plate.foe { background: linear-gradient(90deg, rgba(22,210,195,.85), rgba(10,143,133,.7));
+  clip-path: polygon(4% 0, 100% 0, 100% 100%, 0 100%); justify-content: flex-start; gap: 8px; }
+.e-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 11px; padding: 12px 14px; position: relative; z-index: 2; }
+/* メダル */
+.e-medal { position: relative; width: 104px; height: 104px; display: grid; place-items: center; }
+.e-rays {
+  position: absolute; inset: -16px; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255,212,71,.55) 0 5deg, transparent 5deg 13deg);
+  animation: spin 9s linear infinite; opacity: .85;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.e-coin {
+  position: relative; width: 88px; height: 88px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #fff6b0, #ffcf3d 42%, #e8981b 72%, #a35c05);
+  border: 4px solid #fff; box-shadow: 0 6px 22px rgba(0,0,0,.5), inset 0 -5px 12px rgba(120,60,0,.45);
+  display: grid; place-items: center; text-align: center; color: #5c3200;
+  font-family: var(--font-title); line-height: 1.15;
+}
+.e-coin b { display: block; font-size: 16px; }
+.e-coin small { font-size: 20px; }
+.e-up { font-family: var(--font-title); font-size: 15px; letter-spacing: 2px; color: #ffd447; text-shadow: 0 0 16px rgba(255,212,71,.8); }
+.e-streak { font-family: var(--font-title); font-size: 38px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, #fff, #ffc4dc 55%, var(--me));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.e-streak span { font-size: 15px; }
+.e-bar-wrap { width: 100%; }
+.e-bar-label { display: flex; justify-content: space-between; font-family: var(--font-title); font-size: 9.5px; opacity: .8; margin-bottom: 3px; }
+.e-bar { height: 15px; background: rgba(0,0,0,.5); border: 2px solid rgba(255,255,255,.55); border-radius: 3px; position: relative; overflow: hidden; }
+.e-bar i { position: absolute; inset: 0; width: 33%; background: linear-gradient(180deg, #ffe6f0 0 30%, var(--me) 30% 70%, #b3104c 70%); }
+.e-bar u { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(0,0,0,.55); }
+.e-talk { font-size: 10.5px; opacity: .82; text-align: center; }
+.e-btns { display: flex; gap: 8px; width: 100%; }
+.e-btn { flex: 1; font-family: var(--font-title); font-size: 12px; padding: 12px 0; color: #fff; border: 2px solid rgba(255,255,255,.7);
+  background: rgba(255,255,255,.12); clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%); }
+.e-btn.on { background: linear-gradient(180deg, #ff5c94, var(--me)); border-color: #fff; box-shadow: 0 0 18px rgba(255,45,120,.7); }
+/* E バトル: 斜め分割 */
+.e-split { flex: 1; position: relative; overflow: hidden; z-index: 2; }
+.e-split .half { position: absolute; inset: 0; display: flex; align-items: center; gap: 9px; padding: 0 16px; font-family: var(--font-title); }
+.e-split .top { background: linear-gradient(120deg, rgba(22,210,195,.30), transparent 70%); clip-path: polygon(0 0, 100% 0, 100% 42%, 0 62%); align-items: flex-start; padding-top: 16px; }
+.e-split .bot { background: linear-gradient(300deg, rgba(255,45,120,.34), transparent 70%); clip-path: polygon(0 64%, 100% 44%, 100% 100%, 0 100%); align-items: flex-end; padding-bottom: 16px; justify-content: flex-end; }
+.e-vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(-8deg);
+  font-family: var(--font-title); font-size: 30px; color: #fff; text-shadow: 0 0 20px var(--me), 3px 3px 0 rgba(0,0,0,.5); z-index: 3; }
+.e-av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #1d1319; font-size: 14px; border: 2px solid #fff; }
+.e-cry { position: absolute; left: 0; right: 0; bottom: 96px; text-align: center; font-family: var(--font-title); font-size: 24px; color: #fff; text-shadow: 2px 3px 0 rgba(0,0,0,.55); z-index: 3; }
+
+/* ==========================================================
+   F案 — アーケード対戦（集中線／グリッチ／コンボ）
+   ========================================================== */
+.F {
+  background-color: var(--sc-bg);
+  background-image:
+    repeating-conic-gradient(from 0deg at 50% 42%, rgba(255,255,255,.55) 0 2.2deg, transparent 2.2deg 6deg),
+    linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px);
+  background-size: auto, 20px 20px, 20px 20px;
+  padding: 14px 13px; gap: 9px; align-items: center; justify-content: center;
+}
+.f-glitch {
+  font-family: var(--font-title); font-weight: 900; color: var(--sc-ink); text-align: center;
+  text-shadow: 2.5px 0 0 rgba(255,45,120,.85), -2.5px 0 0 rgba(22,210,195,.85);
+}
+.f-combo { font-size: 15px; letter-spacing: 3px; color: var(--me); }
+.f-streak { font-size: 62px; line-height: .95; }
+.f-streak small { font-size: 17px; letter-spacing: 2px; }
+.f-tele {
+  width: 118%; margin-left: -9%; transform: rotate(-2.6deg);
+  background: repeating-linear-gradient(45deg, var(--sc-ink) 0 9px, #3d2c34 9px 18px);
+  color: #fff; font-family: var(--font-title); font-size: 15px; letter-spacing: 2px;
+  text-align: center; padding: 9px 0; border-top: 3px solid var(--me); border-bottom: 3px solid var(--me);
+}
+.f-tele small { display: block; font-size: 9.5px; letter-spacing: .5px; color: #ffd0e2; }
+.f-card { width: 100%; background: rgba(255,255,255,.95); border: 3px solid var(--sc-ink); border-radius: 4px;
+  box-shadow: 5px 5px 0 var(--sc-ink); padding: 11px 12px 13px; display: flex; flex-direction: column; gap: 8px; }
+.f-rank { font-family: var(--font-title); font-size: 16px; display: flex; justify-content: space-between; align-items: baseline; }
+.f-rank b { color: var(--me); }
+.f-rank i { font-style: normal; font-size: 10px; opacity: .55; }
+/* 格ゲー体力バー */
+.f-hp { height: 17px; border: 3px solid var(--sc-ink); background: #4a3b42; position: relative; overflow: hidden; transform: skewX(-14deg); }
+.f-hp i { position: absolute; inset: 0; width: 33%; background: linear-gradient(180deg, #ffe66d 0 45%, #ff9d1e 45% 100%); }
+.f-hp u { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--sc-ink); }
+.f-talk { font-size: 10.5px; text-align: center; opacity: .8; }
+.f-btns { display: flex; gap: 8px; width: 100%; }
+.f-btn { flex: 1; font-family: var(--font-title); font-size: 12.5px; padding: 12px 0; color: #fff; background: var(--sc-ink);
+  border: 0; border-radius: 3px; box-shadow: 4px 4px 0 var(--me); transform: skewX(-8deg); }
+.f-btn span { display: block; transform: skewX(8deg); }
+.f-btn.on { background: var(--me); box-shadow: 4px 4px 0 var(--sc-ink); }
+.F.battle { justify-content: space-between; }
+.f-nameplate { width: 100%; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-title); font-size: 10.5px; }
+.f-np { background: var(--sc-ink); color: #fff; padding: 5px 11px; transform: skewX(-14deg); }
+.f-np span { display: block; transform: skewX(14deg); }
+.f-np.foe { background: #0a8f85; }
+.f-vsbar { width: 100%; height: 24px; border: 3px solid var(--sc-ink); display: flex; transform: skewX(-14deg); overflow: hidden; }
+.f-vsbar .l { width: 62%; background: repeating-linear-gradient(90deg, var(--foe) 0 7px, #0fb3a6 7px 14px); }
+.f-vsbar .r { flex: 1; background: repeating-linear-gradient(90deg, var(--me) 0 7px, #d61d63 7px 14px); }
+.f-cry { font-size: 32px; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>しゅがけレーティング — 対戦ゲーム系 D / E / F</h1>
+  <p>DotGothic16・#e91e63 系・白グリッドは残したまま、<b>対戦ゲームの熱量</b>を足した3案です。共通で入れた新要素は <b>相手カラー（ミント #16d2c3）</b>。ピンク一色だと対立が生まれず、そこが単調さの正体でした。左がリザルト（昇格の瞬間）、右がバトルです。</p>
+  <div class="tokens">
+    <span class="tok"><i style="background:#fce4ec"></i>#fce4ec</span>
+    <span class="tok"><i style="background:#2b1f24"></i>#2b1f24</span>
+    <span class="tok"><i style="background:#ff2d78"></i>#ff2d78 自分</span>
+    <span class="tok"><i style="background:#16d2c3"></i>#16d2c3 相手 <b>NEW</b></span>
+    <span class="tok">DotGothic16</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ===================== D ===================== -->
+  <div class="col">
+    <h2>D案　シュガースプラッシュ</h2>
+    <div class="sub">スプラトゥーン軸 — 塗り・斜め・極太アウトライン</div>
+    <ul>
+      <li><b>押し合いバーが「塗り率」</b>になる。境界がインクのギザギザ、両端に % 表示</li>
+      <li>文字は白抜き＋<b>4px の黒フチ</b>＋ピンクの影。全部がわずかに傾く</li>
+      <li>パネルは角を斜めに落とす（平行四辺形）。ボタンも傾いて重なる</li>
+      <li>背景に太い斜めストライプ＋インクの飛沫</li>
+      <li>いちばん賑やか。ポップさは しゅがけ と相性が良い</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame D">
+          <div class="z"><div class="d-tele">ナワバリ拡大<b>!!</b><small>ザラメ級 Ⅰ → ザラメ級 Ⅱ</small></div></div>
+          <div class="z d-streak d-out">7<small> 連勝</small></div>
+          <div class="z d-card">
+            <div class="d-rank"><span>ザラメ級 <b>Ⅱ</b></span><i>1 / 3</i></div>
+            <div class="d-tug"><div class="foe"></div><div class="me"></div></div>
+            <div class="d-pct"><span class="f">マカロン 38%</span><span class="m">ラコ 62%</span></div>
+            <div class="d-talk">「甘くなってる！ラコ甘くなってるって！！」</div>
+          </div>
+          <div class="z d-btns">
+            <button class="d-btn">もう一度</button>
+            <button class="d-btn ghost">やめる</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame D battle">
+          <div class="z d-side"><div class="d-av" style="background:var(--foe)">マ</div><span>マカロン<br><span style="opacity:.6;font-size:9px">この辺の常連</span></span></div>
+          <div class="z">
+            <div class="d-tug" style="height:34px"><div class="foe"></div><div class="me" style="clip-path:polygon(58% 0,100% 0,100% 100%,54% 100%,61% 74%,53% 50%,62% 26%)"></div></div>
+            <div class="d-pct"><span class="f">58%</span><span class="m">42%</span></div>
+          </div>
+          <div class="z">
+            <div class="d-cry d-out">押し返せ!!</div>
+            <div class="d-talk" style="margin-top:8px">「押されてる押されてる!!」</div>
+          </div>
+          <div class="z d-side" style="justify-content:flex-end;flex-direction:row-reverse"><div class="d-av" style="background:var(--me)">ラ</div><span style="text-align:right">ラコ<br><span style="opacity:.6;font-size:9px">ザラメ級 Ⅰ・6連勝中</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== E ===================== -->
+  <div class="col">
+    <h2>E案　シュガーランクマッチ</h2>
+    <div class="sub">ポケモン軸 — メダル・プレート・斜めカットイン</div>
+    <ul>
+      <li>階級が<b>メダル（光条つき）</b>になる。昇格でせり上がって回る</li>
+      <li>ゲージは<b>HPバー風</b>（3分割・上下の光沢ライン入り）</li>
+      <li>名前プレートは角落とし。自分＝ピンク／相手＝ミントで即座に読める</li>
+      <li>バトルは<b>斜め分割</b>の対面。中央に VS</li>
+      <li>濃色ベースなので<b>糖蜜級以降の桁インフレが最も映える</b>。ただし既存2作から一番離れる</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame E">
+          <div class="e-grid"></div>
+          <div class="e-plate"><span>2026 SEASON</span><span>ラコ</span></div>
+          <div class="e-body">
+            <div class="e-up">★ 階級昇格 ★</div>
+            <div class="e-medal"><div class="e-rays"></div><div class="e-coin"><b>ザラメ級</b><small>Ⅱ</small></div></div>
+            <div class="e-streak">7<span> 連勝</span></div>
+            <div class="e-bar-wrap">
+              <div class="e-bar-label"><span>ザラメ級 Ⅱ</span><span>1 / 3</span></div>
+              <div class="e-bar"><i></i><u style="left:33%"></u><u style="left:66%"></u></div>
+            </div>
+            <div class="e-talk">「甘さレベルが上がりました。」</div>
+            <div class="e-btns">
+              <button class="e-btn on">もう一度戦う</button>
+              <button class="e-btn">やめる</button>
+            </div>
+          </div>
+          <div class="e-plate foe" style="justify-content:space-between"><span>全国 4,183,042 位</span><span>/ 4,183,048 人</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame E">
+          <div class="e-grid"></div>
+          <div class="e-plate foe"><div class="e-av" style="background:var(--foe)">マ</div><span>マカロン／この辺の常連</span></div>
+          <div class="e-split">
+            <div class="half top"><span style="font-size:11px;opacity:.9">OPPONENT</span></div>
+            <div class="half bot"><span style="font-size:11px;opacity:.9">YOU ／ ザラメ級 Ⅰ ／ 6連勝中</span></div>
+            <div class="e-vs">VS</div>
+            <div class="e-cry">押し返せ!!</div>
+          </div>
+          <div style="position:relative;z-index:2;padding:0 14px 12px">
+            <div class="e-bar-label"><span style="color:var(--foe)">マカロン</span><span style="color:var(--me)">ラコ</span></div>
+            <div class="e-bar" style="height:19px"><i style="width:38%;background:linear-gradient(180deg,#c9fff9 0 30%,var(--foe) 30% 70%,#0a8f85 70%)"></i></div>
+          </div>
+          <div class="e-plate"><div class="e-av" style="background:var(--me)">ラ</div><span>ラコ</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== F ===================== -->
+  <div class="col">
+    <h2>F案　アーケード対戦</h2>
+    <div class="sub">格ゲー軸 — 集中線・グリッチ・コンボカウンタ</div>
+    <ul>
+      <li>連勝が<b>「7 COMBO」的なコンボカウンタ</b>になる。伸びる快感が直結</li>
+      <li>文字に<b>色ズレ（グリッチ）</b>。しゅがけマッチの <code>.glitch-text</code> と地続き</li>
+      <li>ゲージ・ボタン・名前プレートが<b>すべて傾く（skew）</b>。アーケード筐体の癖</li>
+      <li>背景に<b>集中線</b>。昇格はストライプのテロップが横切る</li>
+      <li>既存の白グリッドを残したまま最も「対戦」に寄せられる</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame F">
+          <div class="f-tele">RANK UP!!<small>ザラメ級 Ⅰ → ザラメ級 Ⅱ</small></div>
+          <div class="f-glitch f-combo">7 COMBO</div>
+          <div class="f-glitch f-streak">7<small> 連勝</small></div>
+          <div class="f-card">
+            <div class="f-rank"><span>ザラメ級 <b>Ⅱ</b></span><i>1 / 3</i></div>
+            <div class="f-hp"><i></i><u style="left:33%"></u><u style="left:66%"></u></div>
+            <div class="f-talk">「うわ階級上がった!!」</div>
+          </div>
+          <div class="f-btns">
+            <button class="f-btn on"><span>もう一度</span></button>
+            <button class="f-btn"><span>やめる</span></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame F battle">
+          <div class="f-nameplate">
+            <div class="f-np foe"><span>マカロン</span></div>
+            <div class="f-np"><span>ラコ</span></div>
+          </div>
+          <div style="width:100%">
+            <div class="f-vsbar"><div class="l"></div><div class="r"></div></div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-title);font-size:10px;margin-top:4px">
+              <span style="color:#0a8f85">この辺の常連</span><span style="color:var(--me)">ザラメ級 Ⅰ・6連勝中</span>
+            </div>
+          </div>
+          <div>
+            <div class="f-glitch f-cry">押し返せ!!</div>
+            <div class="f-talk" style="margin-top:8px">「押されてる押されてる!!」</div>
+          </div>
+          <div class="f-glitch" style="font-size:13px;letter-spacing:4px;opacity:.7">FIGHT!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

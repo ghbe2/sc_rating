@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>しゅがけレーティング — デザイン案 A / B / C</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+/* ============ しゅがけ共通トークン（カーリング / マッチから採取） ============ */
+:root {
+  --sc-bg:      #fce4ec;
+  --sc-ink:     #2b1f24;
+  --sc-accent:  #e91e63;
+  --sc-accent2: #ff4081;
+  --sc-border:  #f48fb1;
+  --sc-panel:   #fff8fb;
+  --font-title: 'DotGothic16', monospace, sans-serif;
+  --font-main:  'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-main);
+  background: #efe7ea;
+  color: var(--sc-ink);
+  padding: 28px 18px 70px;
+  line-height: 1.7;
+}
+.page-head { max-width: 1180px; margin: 0 auto 34px; }
+.page-head h1 { font-family: var(--font-title); font-size: 1.5rem; color: var(--sc-accent); letter-spacing: 2px; margin-bottom: 10px; }
+.page-head p { font-size: .88rem; max-width: 760px; }
+.tokens { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.tok { font-family: var(--font-title); font-size: .68rem; padding: 4px 9px; border-radius: 5px; border: 1px solid var(--sc-border); background: #fff; }
+.tok i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 26px; align-items: start; }
+.col > h2 { font-family: var(--font-title); font-size: 1.05rem; color: var(--sc-accent); letter-spacing: 1px; margin-bottom: 4px; }
+.col > .sub { font-size: .78rem; opacity: .75; margin-bottom: 12px; }
+.col ul { font-size: .78rem; margin: 0 0 16px 1.1em; }
+.col ul li { margin-bottom: 3px; }
+.pair { display: flex; gap: 12px; flex-wrap: wrap; }
+.cap { font-family: var(--font-title); font-size: .62rem; letter-spacing: 1.5px; opacity: .6; margin: 8px 0 5px; }
+
+/* 端末フレーム */
+.frame {
+  width: 292px; height: 520px;
+  border-radius: 20px; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(60,30,45,.22);
+  position: relative;
+  display: flex; flex-direction: column;
+  font-size: 13px;
+}
+
+/* ================================================================
+   A案 — しゅがけ純正
+   ================================================================ */
+.A {
+  background-color: var(--sc-bg);
+  background-image: linear-gradient(90deg, rgba(255,255,255,.42) 1px, transparent 1px),
+                    linear-gradient(rgba(255,255,255,.42) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--sc-ink);
+  padding: 18px 15px; gap: 12px; align-items: center; justify-content: center;
+}
+.A .a-streak {
+  font-family: var(--font-title); font-size: 40px; font-weight: 900; line-height: 1.1;
+  background: linear-gradient(135deg, var(--sc-accent2), var(--sc-accent));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.A .a-card {
+  width: 100%; background: var(--sc-panel);
+  border: 2px solid var(--sc-border); border-radius: 16px;
+  padding: 14px 13px 16px; box-shadow: 0 7px 20px rgba(80,30,50,.15);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.A .a-promo {
+  font-family: var(--font-title); font-size: 15px; color: var(--sc-accent);
+  text-align: center; letter-spacing: 1px;
+  border-bottom: 2px dashed var(--sc-accent); padding-bottom: 8px;
+}
+.A .a-promo small { display: block; font-family: var(--font-main); font-size: 10px; opacity: .7; letter-spacing: 0; margin-top: 3px; }
+.A .a-rank-row { display: flex; justify-content: space-between; align-items: baseline; }
+.A .a-rank { font-family: var(--font-title); font-size: 17px; font-weight: 900; }
+.A .a-rank b { color: var(--sc-accent); }
+.A .a-num { font-family: var(--font-title); font-size: 11px; opacity: .65; }
+.A .a-gauge { height: 13px; border-radius: 7px; background: rgba(0,0,0,.06); border: 1px solid var(--sc-border); overflow: hidden; position: relative; }
+.A .a-gauge i { position: absolute; inset: 0; width: 33%; background: linear-gradient(90deg, var(--sc-accent2), var(--sc-accent)); }
+.A .a-talk { font-size: 11px; text-align: center; opacity: .8; }
+.A .a-btns { display: flex; gap: 8px; width: 100%; }
+.A .a-btn {
+  flex: 1; font-family: var(--font-title); font-size: 12px; padding: 11px 0;
+  border: 0; border-radius: 999px; color: #fff; background: var(--sc-accent2);
+  box-shadow: 0 2px 0 #c33a66, 0 3px 9px rgba(120,30,60,.24);
+}
+.A .a-btn.ghost { background: #fff; color: var(--sc-accent); box-shadow: 0 2px 0 #d9a8ba, 0 3px 9px rgba(90,70,80,.16); }
+/* A バトル */
+.A.battle { justify-content: space-between; }
+.A .a-vs { width: 100%; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-title); font-size: 11px; }
+.A .a-face { display: flex; align-items: center; gap: 7px; }
+.A .a-av { width: 30px; height: 30px; border-radius: 50%; background: var(--sc-accent2); color: #fff; display: grid; place-items: center; font-size: 13px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(120,30,60,.3); }
+.A .a-tug { width: 100%; height: 22px; border-radius: 11px; overflow: hidden; display: flex; border: 2px solid var(--sc-border); background: #fff; }
+.A .a-tug .l { width: 62%; background: linear-gradient(90deg,#b3a0a8,#8d7a85); }
+.A .a-tug .r { flex: 1; background: linear-gradient(90deg, var(--sc-accent2), var(--sc-accent)); }
+.A .a-cry { font-family: var(--font-title); font-size: 26px; color: var(--sc-accent); text-align: center; }
+
+/* ================================================================
+   B案 — 甘さ計測メーター（診断書 / 伝票）
+   ================================================================ */
+.B {
+  background-color: #fdf5f8;
+  background-image: linear-gradient(90deg, rgba(244,143,177,.22) 1px, transparent 1px),
+                    linear-gradient(rgba(244,143,177,.22) 1px, transparent 1px);
+  background-size: 12px 12px;
+  color: var(--sc-ink); padding: 16px 14px; gap: 10px; justify-content: center;
+}
+.B .b-doc { background: #fff; border: 1px solid var(--sc-ink); padding: 13px 12px 15px; box-shadow: 3px 3px 0 rgba(43,31,36,.16); }
+.B .b-head {
+  font-family: var(--font-title); font-size: 9.5px; letter-spacing: 3px; text-align: center;
+  border-top: 1px solid var(--sc-ink); border-bottom: 1px solid var(--sc-ink);
+  padding: 4px 0; margin-bottom: 11px;
+}
+.B .b-row { display: flex; justify-content: space-between; font-size: 11px; border-bottom: 1px dotted rgba(43,31,36,.4); padding: 4px 0; }
+.B .b-row span:first-child { font-family: var(--font-title); font-size: 9.5px; letter-spacing: 1px; opacity: .8; }
+.B .b-row span:last-child { font-family: var(--font-title); font-weight: 700; }
+.B .b-big { text-align: center; margin: 12px 0 8px; }
+.B .b-big em { font-family: var(--font-title); font-style: normal; font-size: 42px; font-weight: 900; color: var(--sc-accent); line-height: 1; }
+.B .b-big small { display: block; font-family: var(--font-title); font-size: 9px; letter-spacing: 3px; opacity: .65; }
+.B .b-meter { margin-top: 10px; }
+.B .b-meter .scale { display: flex; justify-content: space-between; font-family: var(--font-title); font-size: 8px; opacity: .55; margin-bottom: 2px; }
+.B .b-bar { height: 16px; border: 1px solid var(--sc-ink); background: repeating-linear-gradient(90deg, transparent 0 24px, rgba(43,31,36,.35) 24px 25px); position: relative; }
+.B .b-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 66%; background: repeating-linear-gradient(45deg, var(--sc-accent) 0 5px, var(--sc-accent2) 5px 10px); }
+.B .b-stamp {
+  position: absolute; right: 16px; top: 128px;
+  width: 96px; height: 96px; border: 3px double var(--sc-accent); border-radius: 50%;
+  color: var(--sc-accent); font-family: var(--font-title); text-align: center;
+  display: grid; place-content: center; transform: rotate(-13deg); opacity: .92;
+  background: rgba(255,255,255,.55); line-height: 1.25;
+}
+.B .b-stamp b { display: block; font-size: 15px; }
+.B .b-stamp small { font-size: 8px; letter-spacing: 1px; }
+.B .b-btns { display: flex; gap: 7px; margin-top: 4px; }
+.B .b-btn { flex: 1; font-family: var(--font-title); font-size: 11px; padding: 9px 0; background: #fff; color: var(--sc-ink); border: 1px solid var(--sc-ink); box-shadow: 2px 2px 0 rgba(43,31,36,.8); }
+.B .b-btn.on { background: var(--sc-accent); color: #fff; border-color: var(--sc-accent); box-shadow: 2px 2px 0 #8c1038; }
+/* B バトル */
+.B.battle { justify-content: space-between; }
+.B .b-plate { background: #fff; border: 1px solid var(--sc-ink); padding: 6px 8px; display: flex; justify-content: space-between; font-family: var(--font-title); font-size: 10px; }
+.B .b-tugwrap { border: 1px solid var(--sc-ink); background: #fff; padding: 6px; }
+.B .b-tug { height: 20px; display: flex; }
+.B .b-tug .l { width: 58%; background: repeating-linear-gradient(45deg,#7d6c74 0 5px,#a3919a 5px 10px); }
+.B .b-tug .r { flex: 1; background: repeating-linear-gradient(45deg, var(--sc-accent) 0 5px, var(--sc-accent2) 5px 10px); }
+.B .b-cry { font-family: var(--font-title); font-size: 22px; text-align: center; letter-spacing: 2px; }
+
+/* ================================================================
+   C案 — 大会中継 / ゲーム番組
+   ================================================================ */
+.C {
+  background-color: var(--sc-bg);
+  background-image: linear-gradient(90deg, rgba(255,255,255,.42) 1px, transparent 1px),
+                    linear-gradient(rgba(255,255,255,.42) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--sc-ink); justify-content: space-between;
+}
+.C .c-topbar, .C .c-botbar {
+  background: var(--sc-ink); color: #fff; padding: 8px 12px;
+  font-family: var(--font-title); font-size: 10px; letter-spacing: 2px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.C .c-topbar b { color: var(--sc-accent2); }
+.C .c-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 12px 14px; }
+.C .c-tele {
+  width: calc(100% + 30px); margin-left: -15px;
+  background: linear-gradient(90deg, var(--sc-accent2), var(--sc-accent));
+  color: #fff; font-family: var(--font-title); font-size: 17px; letter-spacing: 2px;
+  text-align: center; padding: 7px 0; transform: rotate(-2.5deg);
+  box-shadow: 0 4px 14px rgba(233,30,99,.4);
+}
+.C .c-tele small { display: block; font-size: 9px; letter-spacing: 1px; opacity: .95; }
+.C .c-streak {
+  font-family: var(--font-title); font-size: 52px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, var(--sc-accent2), var(--sc-accent));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.C .c-streak span { font-size: 17px; -webkit-text-fill-color: var(--sc-ink); }
+.C .c-panel { width: 100%; background: rgba(255,255,255,.9); border-left: 5px solid var(--sc-accent2); border-radius: 3px 11px 11px 3px; padding: 9px 11px; }
+.C .c-rank { font-family: var(--font-title); font-size: 15px; font-weight: 900; display: flex; justify-content: space-between; align-items: baseline; }
+.C .c-rank b { color: var(--sc-accent); }
+.C .c-rank i { font-style: normal; font-family: var(--font-title); font-size: 10px; opacity: .6; }
+.C .c-gauge { height: 10px; border-radius: 5px; background: rgba(43,31,36,.12); margin-top: 7px; overflow: hidden; position: relative; }
+.C .c-gauge i { position: absolute; inset: 0; width: 100%; background: linear-gradient(90deg, var(--sc-accent2), var(--sc-accent)); }
+.C .c-btns { display: flex; gap: 8px; width: 100%; }
+.C .c-btn { flex: 1; font-family: var(--font-title); font-size: 12px; padding: 12px 0; border: 0; border-radius: 999px; color: #fff; background: var(--sc-ink); box-shadow: 0 3px 0 #0f0a0d; }
+.C .c-btn.on { background: var(--sc-accent2); box-shadow: 0 3px 0 #c33a66; }
+/* C バトル */
+.C .c-fighter { display: flex; align-items: center; gap: 8px; }
+.C .c-av { width: 26px; height: 26px; border-radius: 50%; background: var(--sc-accent2); display: grid; place-items: center; color: #fff; font-size: 12px; }
+.C .c-tug { width: 100%; height: 26px; border-radius: 13px; overflow: hidden; display: flex; box-shadow: inset 0 0 0 2px rgba(43,31,36,.25); }
+.C .c-tug .l { width: 64%; background: linear-gradient(90deg,#4a3b42,#8d7a85); }
+.C .c-tug .r { flex: 1; background: linear-gradient(90deg, var(--sc-accent2), var(--sc-accent)); }
+.C .c-cry { font-family: var(--font-title); font-size: 28px; color: var(--sc-ink); text-align: center; }
+.C .c-vs { font-family: var(--font-title); font-size: 11px; color: var(--sc-accent); letter-spacing: 3px; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>しゅがけレーティング — デザイン案 A / B / C</h1>
+  <p>3案とも <b>しゅがけカーリング / しゅがけマッチと同じトークン</b>（背景 #fce4ec ＋20px白グリッド、DotGothic16、#e91e63 系アクセント、白パネル＋ピンク枠）を使っています。違うのは<b>組み方と temperament</b> です。左がリザルト（＝メインコンテンツ）、右がバトルです。</p>
+  <div class="tokens">
+    <span class="tok"><i style="background:#fce4ec"></i>#fce4ec 背景</span>
+    <span class="tok"><i style="background:#2b1f24"></i>#2b1f24 文字</span>
+    <span class="tok"><i style="background:#e91e63"></i>#e91e63 アクセント</span>
+    <span class="tok"><i style="background:#ff4081"></i>#ff4081 明アクセント</span>
+    <span class="tok"><i style="background:#f48fb1"></i>#f48fb1 枠</span>
+    <span class="tok">DotGothic16</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ===================== A ===================== -->
+  <div class="col">
+    <h2>A案　しゅがけ純正</h2>
+    <div class="sub">カーリング／マッチと同じ棚に並べても違和感ゼロ</div>
+    <ul>
+      <li>白パネル＋ピンク2px枠＋角丸16px、既存2作そのままの箱</li>
+      <li>連勝数はグラデ文字。昇格見出しは<b>破線下線</b>（マッチの h1 と同じ処理）</li>
+      <li>ボタンはピル型＋立体シャドウ（押すと沈む）</li>
+      <li>いちばん安全。ただし「レーティングらしさ」は弱い</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame A">
+          <div class="a-streak">7 連勝!</div>
+          <div class="a-card">
+            <div class="a-promo">甘さレベル上昇<small>ザラメ級 Ⅰ → ザラメ級 Ⅱ</small></div>
+            <div class="a-rank-row"><div class="a-rank">ザラメ級 <b>Ⅱ</b></div><div class="a-num">1 / 3</div></div>
+            <div class="a-gauge"><i></i></div>
+            <div class="a-talk">「甘くなってる！ラコ甘くなってるって！！」</div>
+          </div>
+          <div class="a-btns">
+            <button class="a-btn">もう一度戦う</button>
+            <button class="a-btn ghost">やめる</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame A battle">
+          <div class="a-vs">
+            <div class="a-face"><div class="a-av" style="background:#8d7a85">マ</div><div>マカロン<br><span style="opacity:.6;font-size:9px">この辺の常連</span></div></div>
+            <span style="opacity:.55">VS</span>
+          </div>
+          <div class="a-tug"><div class="l"></div><div class="r"></div></div>
+          <div>
+            <div class="a-cry">押し返せ!!</div>
+            <div class="a-talk" style="margin-top:6px">「押されてる押されてる!!」</div>
+          </div>
+          <div class="a-tug"><div class="l" style="width:38%"></div><div class="r"></div></div>
+          <div class="a-vs">
+            <span style="opacity:.55">YOU</span>
+            <div class="a-face"><div>ラコ<br><span style="opacity:.6;font-size:9px">ザラメ級 Ⅰ</span></div><div class="a-av">ラ</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== B ===================== -->
+  <div class="col">
+    <h2>B案　甘さ計測メーター</h2>
+    <div class="sub">診断書・伝票のトーン。風刺がいちばん効く</div>
+    <ul>
+      <li>細い方眼＋<b>角を立てた白紙</b>＋ドロップシャドウで「measurement」の見た目</li>
+      <li>昇格は<b>スタンプがドンと押される</b>（回転した二重丸）</li>
+      <li>ゲージは<b>目盛り付きの計測器</b>。斜線ハッチで工業的に</li>
+      <li>「無意味な数字を無意味な尺度で測る」＝§6の偽・全国ランキングと地続き</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame B">
+          <div class="b-stamp"><b>ザラメ級</b><small>Ⅱ</small><small>昇格</small></div>
+          <div class="b-doc">
+            <div class="b-head">甘 度 測 定 結 果</div>
+            <div class="b-big"><small>連 勝 記 録</small><em>7</em></div>
+            <div class="b-row"><span>使用検体</span><span>ラコ</span></div>
+            <div class="b-row"><span>階級</span><span>ザラメ級 Ⅱ</span></div>
+            <div class="b-row"><span>対戦相手</span><span>マカロン</span></div>
+            <div class="b-meter">
+              <div class="scale"><span>0</span><span>甘度</span><span>3</span></div>
+              <div class="b-bar"><i></i></div>
+            </div>
+          </div>
+          <div class="b-btns">
+            <button class="b-btn on">もう一度戦う</button>
+            <button class="b-btn">やめる</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame B battle">
+          <div class="b-plate"><span>対戦相手</span><span>マカロン／この辺の常連</span></div>
+          <div class="b-tugwrap">
+            <div class="scale" style="display:flex;justify-content:space-between;font-family:var(--font-title);font-size:8px;opacity:.55;margin-bottom:3px"><span>相手</span><span>拮抗</span><span>自分</span></div>
+            <div class="b-tug"><div class="l"></div><div class="r"></div></div>
+          </div>
+          <div>
+            <div class="b-cry">押 し 返 せ</div>
+            <div style="text-align:center;font-size:10.5px;opacity:.75;margin-top:6px">「押されています。…想定内です。」</div>
+          </div>
+          <div class="b-plate"><span>自分</span><span>ラコ／ザラメ級 Ⅰ／6連勝中</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== C ===================== -->
+  <div class="col">
+    <h2>C案　大会中継</h2>
+    <div class="sub">テレビのスコアボード。インフレがいちばん映える</div>
+    <ul>
+      <li>上下に<b>濃色帯（#2b1f24）</b>を敷いて締める。ピンク一色にならない</li>
+      <li>昇格は<b>斜めのテロップ</b>が画面を横切る</li>
+      <li>連勝数・レートを極大グラデ文字に。桁が増える快感が主役</li>
+      <li>3案でいちばん「レーティング」らしいが、既存2作からは少し離れる</li>
+    </ul>
+    <div class="pair">
+      <div>
+        <div class="cap">RESULT</div>
+        <div class="frame C">
+          <div class="c-topbar"><span>2026 SEASON</span><span><b>RAKO</b></span></div>
+          <div class="c-body">
+            <div class="c-tele">甘さレベル上昇<small>ザラメ級 Ⅰ → ザラメ級 Ⅱ</small></div>
+            <div class="c-streak">7<span> 連勝</span></div>
+            <div class="c-panel">
+              <div class="c-rank"><span>ザラメ級 <b>Ⅱ</b></span><i>1 / 3</i></div>
+              <div class="c-gauge"><i style="width:33%"></i></div>
+            </div>
+            <div style="font-size:10.5px;opacity:.75;text-align:center">「うわ階級上がった!!」</div>
+            <div class="c-btns">
+              <button class="c-btn on">もう一度戦う</button>
+              <button class="c-btn">やめる</button>
+            </div>
+          </div>
+          <div class="c-botbar"><span>全国 4,183,042 位</span><span>/ 4,183,048 人</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="cap">BATTLE</div>
+        <div class="frame C">
+          <div class="c-topbar">
+            <div class="c-fighter"><div class="c-av" style="background:#8d7a85">マ</div><span>マカロン</span></div>
+            <span style="opacity:.6">この辺の常連</span>
+          </div>
+          <div class="c-body">
+            <div class="c-vs">VS</div>
+            <div class="c-tug"><div class="l"></div><div class="r"></div></div>
+            <div class="c-cry">押し返せ!!</div>
+            <div style="font-size:10.5px;opacity:.75">「押されてる押されてる!!」</div>
+          </div>
+          <div class="c-botbar">
+            <div class="c-fighter"><div class="c-av">ラ</div><span>ラコ</span></div>
+            <span style="opacity:.6">ザラメ級 Ⅰ ／ 6連勝中</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
