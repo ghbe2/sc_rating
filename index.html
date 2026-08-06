@@ -122,7 +122,13 @@ body {
 /* クラス名は .pop（タップ粒子）と衝突させないこと。あちらは position:absolute; top:50% を持つ */
 #chara.bump { animation: charapop 420ms cubic-bezier(.2,1.6,.4,1); }
 @keyframes charapop { 0% { transform: scale(.86) translateY(10px);} 60% { transform: scale(1.05);} 100% { transform: scale(1);} }
-#chara img { width: 100%; display: block; }
+/* 縦横比を 3:4 に固定する。8枚のサイズが揃っていなくても表示位置が動かないよう、
+   はみ出しは下端中央を基準に収める（立ち絵は画面下辺に接地する前提） */
+#chara img {
+  width: 100%; display: block;
+  aspect-ratio: 3 / 4;
+  object-fit: contain; object-position: bottom center;
+}
 /* 画像が無いときのプレースホルダ */
 #chara-ph {
   width: 100%; aspect-ratio: 3 / 4;
