@@ -74,6 +74,102 @@
 
 ---
 
+## 2-B. Suno で BGM を作る場合
+
+### 共通設定
+
+| 項目 | 設定 |
+|---|---|
+| モード | **Custom**（Simple だと歌が入る） |
+| Instrumental | **ON**（必須） |
+| モデル | v4.5+ / v5 |
+| 長さ | 2分程度で生成し、**あとから32〜64小節を切り出す**（そのまま使わない） |
+| 生成回数 | 各3〜5テイク。ループに耐える「淡々とした」テイクを選ぶ |
+
+**Exclude Styles**（除外欄）には共通でこれを入れてください:
+
+```
+vocals, singing, lyrics, spoken word, fade in, fade out, ambient intro,
+breakdown, half-time, sub bass, applause, sound effects, silence
+```
+
+`fade in / fade out / ambient intro` の除外が重要です。**Suno は放っておくと必ず静かな入りと
+フェードアウトを付けます**が、ループBGMではどちらも邪魔になります。
+
+---
+
+### `bgm_battle.mp3` — 本命
+
+一番長く聴かせる曲です。**主張しすぎないこと**を最優先にしてください。
+1プレイで何十回もループし、その上に効果音が全部乗ります。
+
+```
+Upbeat chiptune power-pop, 8-bit square wave lead with punchy live drums,
+bright major key, 158 BPM, candy-colored and playful, driving eighth-note
+bassline, glockenspiel sparkle accents, mid-range left open for sound effects,
+constant energy with no breakdown or drop, steady loopable groove,
+retro handheld game battle theme
+```
+
+- **BPM 155〜165** を狙ってください。押し合いのフェーズが0.9〜1.5秒刻みなので、そのくらいが合います
+- `no breakdown or drop` と `constant energy` を必ず入れること。**曲中で静かになる箇所があると、
+  そこがループに当たったときバトルの熱が落ちます**
+- `mid-range left open` は効果音の帯域を空けてもらうための指定です
+
+### `bgm_battle.mp3` — 別案（もっとバカゲー寄り）
+
+上が「ちゃんとしすぎ」と感じたらこちら。
+
+```
+Hyperactive J-pop chiptune, ska-punk offbeat guitar stabs, 8-bit arpeggios,
+brass hits, 172 BPM, absurdly cheerful, comedic and slightly unhinged,
+tight snare rolls, candy shop energy, no vocals, loopable game battle theme
+```
+
+### `bgm_title.mp3`
+
+タイトルは数秒しか見ないので、短く・軽く。
+
+```
+Gentle chiptune waltz-pop, soft square and triangle wave leads, music box and
+glockenspiel, warm major key, 124 BPM, sweet and slightly wistful, sparse
+arrangement, cute retro handheld title screen theme, calm but inviting, loopable
+```
+
+`slightly wistful`（少し物悲しい）を入れているのは、**このゲームが「無意味な数字を無意味な尺度で
+順位付けする」風刺**だからです。全面的に楽しいだけの曲より、ほんの少し翳りがある方が最終成績の
+偽ランキングに効きます。強すぎたら外してください。
+
+---
+
+### 生成後の処理（ここを省くとループが破綻します）
+
+1. **切り出し**: 一番おいしい32〜64小節を選び、**小節頭で正確に切る**。
+   158BPM の32小節なら約48.6秒
+2. **繋ぎの確認**: 切り出した音声を2つ並べて再生し、継ぎ目が不自然でないか聴く
+3. **音量**: ピークを **-6dBFS 前後**に。効果音より下に敷くので、SE（-3dBFS）より低めにします
+4. **書き出し**: MP3 / 44.1kHz / 160kbps
+
+### ⚠ ループの継ぎ目について（技術的な制約）
+
+**MP3 は仕様上、必ず先頭と末尾に無音のパディングが入ります。** そのため
+`<audio loop>` でループさせると、繋ぎ目で数十ミリ秒の「プツッ」という空白が出ます。
+これは音源の作り方では消せません。
+
+現実的な対処は次のどれかです。
+
+- **A. 継ぎ目を目立たせない曲にする**（推奨・追加実装なし）
+  ループ末尾をシンバルやリバーブの余韻で終わらせる。ドラムのフィルで終わらせると、
+  わずかな空白が「タメ」に聞こえて気にならなくなります。**Suno のプロンプトに
+  `ending with a cymbal swell` を足す**と狙いやすいです
+- **B. ゲーム側を Web Audio に切り替える**（完全な無縫ループになる）
+  こちらで実装できます。ただし `fetch` を使うため **GitHub Pages 上でしか動かず**、
+  ローカルの `file://` では従来方式にフォールバックします
+
+**まずは A で試してください。** 気になるようなら B を実装します。
+
+---
+
 ## 3. 鳴るタイミングの全体像
 
 1戦のあいだに何がどの順で鳴るかです。**通常勝利で約9〜13秒、昇格を挟むと最大17秒**です。
