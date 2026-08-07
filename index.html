@@ -116,7 +116,7 @@ body {
 
 #chara {
   position: relative;
-  width: var(--chara-w);
+  width: var(--chara-w); aspect-ratio: 4 / 3;
   opacity: 0; transform: translate3d(-8px, 16px, 0);
   transition: opacity 300ms ease, transform 300ms ease, width 300ms ease;
   will-change: transform, opacity;
@@ -126,16 +126,19 @@ body {
 /* クラス名は .pop（タップ粒子）と衝突させないこと。あちらは position:absolute; top:50% を持つ */
 #chara.bump { animation: charapop 420ms cubic-bezier(.2,1.6,.4,1); }
 @keyframes charapop { 0% { transform: scale(.86) translateY(10px);} 60% { transform: scale(1.05);} 100% { transform: scale(1);} }
-/* 実素材は 960x720（4:3 の横長）。8枚のサイズが揃っていなくても表示位置が動かないよう
-   比率を固定し、はみ出しは下端中央を基準に収める（立ち絵は画面下辺に接地する前提） */
-#chara img {
-  width: 100%; display: block;
-  aspect-ratio: 4 / 3;
+/* 表情ごとに <img> を用意して重ね、表示だけ切り替える。
+   1枚の src を差し替える方式だと、新しい画像がデコードされるまで
+   ブラウザが前の絵を描き続けてしまい、場面が変わっても表情が戻らない。 */
+#chara-faces { position: absolute; inset: 0; }
+#chara-faces img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; object-position: bottom center;
+  opacity: 0; pointer-events: none;
 }
+#chara-faces img.on { opacity: 1; }
 /* 画像が無いときのプレースホルダ */
 #chara-ph {
-  width: 100%; aspect-ratio: 4 / 3;
+  position: absolute; inset: 0; width: 100%;
   background: #fff; border: 4px solid var(--ink); border-bottom: 0;
   border-radius: 46% 46% 6px 6px / 30% 30% 6px 6px;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -505,7 +508,7 @@ body {
 <div id="chara-wrap">
   <div id="chara-talk"><span id="chara-talk-text"></span></div>
   <div id="chara">
-    <img id="chara-img" alt="">
+    <div id="chara-faces"></div>
     <div id="chara-ph">
       <div class="ph-top" id="ph-top">NOW PLAYING</div>
       <div class="ph-face" id="ph-face">・_・</div>
@@ -769,8 +772,18 @@ const CONFIG = {
     side: "left",           // 右利きの親指で隠れないよう左下に置く
     dir: "images/characters/",
     images: {
-      rako: { normal: "rako_normal.png", surprise: "rako_surprise.png", win: "rako_win.png", lose: "rako_lose.png" },
-      ou:   { normal: "ou_normal.png",   surprise: "ou_surprise.png",   win: "ou_win.png",   lose: "ou_lose.png" }
+      rako: { normal: "rako_normal.png", surprise: "rako_surprise.png", win: "rako_win.png", lose: "rako_lose.png", hype: "rako_hype.png" },
+      ou:   { normal: "ou_normal.png",   surprise: "ou_surprise.png",   win: "ou_win.png",   lose: "ou_lose.png",   hype: "ou_hype.png" }
+    },
+    /* ---- 隠し要素（画像を置くまでは何も起きない） ----
+       hypeFrom   … 1バトル中にこの回数叩くと専用表情に切り替わる
+       outfitFrom … この回数叩くと衣装が変わり、以降そのシーズンずっとその姿
+       衣装側の画像が無いときは通常版のまま動くので、片方だけ用意しても壊れない。 */
+    hypeFrom: 40,
+    outfitFrom: 50,
+    outfits: {
+      rako: { normal: "rako_b_normal.png", surprise: "rako_b_surprise.png", win: "rako_b_win.png", lose: "rako_b_lose.png", hype: "rako_b_hype.png" },
+      ou:   { normal: "ou_b_normal.png",   surprise: "ou_b_surprise.png",   win: "ou_b_win.png",   lose: "ou_b_lose.png",   hype: "ou_b_hype.png" }
     },
     /* 画像が読めなかったときのプレースホルダ用 */
     faces: {
@@ -1223,7 +1236,7 @@ const el = {
   screens: { title: $("title"), battle: $("battle"), clash: $("clash"), result: $("result"), warp: $("warp"), final: $("final") },
   bg: Array.from(document.querySelectorAll("#bg > div")),
   stage: $("stage"), danger: $("danger"), bgmBtn: $("bgm-btn"), seBtn: $("se-btn"),
-  chara: $("chara"), charaImg: $("chara-img"), charaPh: $("chara-ph"),
+  chara: $("chara"), charaFaces: $("chara-faces"), charaPh: $("chara-ph"),
   phFace: $("ph-face"), phName: $("ph-name"), phTag: $("ph-tag"), phTop: $("ph-top"),
   charTrack: $("char-track"), dots: $("dots"),
 
@@ -1257,6 +1270,7 @@ const el = {
 const S = {
   state: "title", mode: null, streak: 0, warp: 0, taps: 0, required: 1, counting: false, pendingWarp: false,
   npc: null, npcRateFactor: 1, npcRank: null, lastRank: null,
+  faceEls: { base: {}, outfit: {} }, outfit: false, charaOutfit: false, hyped: false,
   script: null, phaseIdx: 0,
   idleTimer: null, seq: [], countRaf: 0, tugRaf: 0, shakeTimer: null,
   lastResLen: -1, barHalf: 150, lastPct: -1, charaExpr: "", seasonId: 0
@@ -1304,24 +1318,56 @@ function charaSay(text) {
   el.charaTalkText.textContent = text;
   el.charaTalk.classList.add("on");
 }
+/* 表情ぶんの <img> をあらかじめ全部作って読み込んでおく。
+   切り替えは class の付け替えだけなので、場面が変わった瞬間に確実に絵も変わる。 */
+const brokenSrc = new Set();          // 一度 404 した絵は覚えて二度と取りに行かない
+function buildFaces(modeKey) {
+  el.charaFaces.innerHTML = "";
+  S.faceEls = { base: {}, outfit: {} };
+  const add = (set, bucket) => {
+    Object.keys(set || {}).forEach(expr => {
+      const src = CONFIG.chara.dir + set[expr];
+      const img = document.createElement("img");
+      img.alt = "";
+      if (brokenSrc.has(src)) { img.dataset.broken = "1"; }
+      else {
+        img.addEventListener("error", () => { img.dataset.broken = "1"; brokenSrc.add(src); }, { once: true });
+        img.src = src;
+      }
+      el.charaFaces.appendChild(img);
+      S.faceEls[bucket][expr] = img;
+    });
+  };
+  add(CONFIG.chara.images[modeKey], "base");
+  add((CONFIG.chara.outfits || {})[modeKey], "outfit");   // 無ければ何も作られない
+}
+// 使う <img> を選ぶ。衣装が壊れて（無くて）いれば通常版に落ちる
+function faceImg(expr) {
+  const b = S.faceEls.base[expr];
+  if (S.outfit) {
+    const o = S.faceEls.outfit[expr];
+    if (o && !o.dataset.broken) return o;
+  }
+  return (b && !b.dataset.broken) ? b : null;
+}
 function charaFace(expr, bump) {
   if (!CONFIG.chara.enabled || !S.mode) return;
-  if (expr === S.charaExpr && !bump) return;
-  S.charaExpr = expr;
-  const key = S.mode.key;
-  // 画像があれば使う。無ければ CSS プレースホルダにフォールバック。
-  const file = (CONFIG.chara.images[key] || {})[expr];
-  if (file) {
-    el.charaImg.onload  = () => { el.charaImg.style.display = "block"; el.charaPh.style.display = "none"; };
-    el.charaImg.onerror = () => { el.charaImg.style.display = "none";  el.charaPh.style.display = "flex"; };
-    el.charaImg.src = CONFIG.chara.dir + file;
-  } else {
-    el.charaImg.style.display = "none"; el.charaPh.style.display = "flex";
+  const changed = expr !== S.charaExpr || S.charaOutfit !== S.outfit;
+  if (!changed && !bump) return;
+  S.charaExpr = expr; S.charaOutfit = S.outfit;
+
+  let img = faceImg(expr);
+  if (!img && expr === "hype") img = faceImg("win");      // 専用絵が無ければ勝利顔で代用
+  Object.values(S.faceEls.base).forEach(n => n.classList.remove("on"));
+  Object.values(S.faceEls.outfit).forEach(n => n.classList.remove("on"));
+  if (img) { img.classList.add("on"); el.charaPh.style.display = "none"; }
+  else {
+    el.charaPh.style.display = "flex";
+    const f = (CONFIG.chara.faces[S.mode.key] || {})[expr] || ["・_・", ""];
+    el.phFace.textContent = f[0];
+    el.phTag.textContent = f[1];
+    el.phName.textContent = S.mode.name;
   }
-  const f = (CONFIG.chara.faces[key] || {})[expr] || ["・_・", ""];
-  el.phFace.textContent = f[0];
-  el.phTag.textContent = f[1];
-  el.phName.textContent = S.mode.name;
   if (bump) { el.chara.classList.remove("bump"); void el.chara.offsetWidth; el.chara.classList.add("bump"); }
 }
 
@@ -1447,7 +1493,8 @@ function startSeason(mode) {
   S.seasonId++;                    // シーズンごとに BGM を引き直す
   S.streak = 0;
   S.lastResLen = -1;
-  S.charaExpr = "";
+  S.charaExpr = ""; S.outfit = false; S.charaOutfit = false;
+  buildFaces(mode.key);            // 表情ぶんの img を先に全部作って読ませておく
   Rate.log = 0; Rate.exact = null;   // 前シーズンのレートを持ち越さない
   S.warp = 0; S.lastRank = null;
   S.pendingWarp = !!reached[mode.key];   // 初勝利のあとに一気に駆け上がる
@@ -1501,7 +1548,7 @@ function warpToMaster(done) {
 function beginBattle() {
   clearTimers();
   S.state = "battle";
-  S.taps = 0;
+  S.taps = 0; S.hyped = false;
   S.npc = pickNpc(S.streak);
   S.phaseIdx = -1;
 
@@ -1536,6 +1583,7 @@ function beginBattle() {
   show("battle");
   Bgm.battle(S.mode.key, S.seasonId);
   charaShow(true, false);
+  charaFace("normal", true);      // 前の勝敗顔を持ち越さない（カウントダウン中もここが出る）
   measureBar();
   S.tugRaf = requestAnimationFrame(tugFrame);
 
@@ -1578,7 +1626,7 @@ function nextPhase() {
   el.phaseCry.textContent = CONFIG.cries[ph.key];
   el.phaseCry.classList.remove("beat"); void el.phaseCry.offsetWidth; el.phaseCry.classList.add("beat");
   charaSay(pick(CONFIG.talk[S.mode.key][ph.key]));
-  charaFace(PHASE_FACE[ph.key], true);
+  charaFace(S.hyped ? "hype" : PHASE_FACE[ph.key], true);   // 叩き込み中は専用表情を保つ
   Sound.phase(ph.key);
   if (ph.key === "pinch") vibrate([0, 18, 60, 18]);
 
@@ -1597,6 +1645,18 @@ function onTap() {
   shake();
   popPlus();
   resetIdle();
+
+  // 叩き込んだ人だけが見られるもの
+  const C = CONFIG.chara;
+  if (S.taps === C.outfitFrom && !S.outfit) {     // 衣装チェンジ。以降このシーズンずっと
+    S.outfit = true; S.hyped = true;
+    charaFace("hype", true);
+    flash(); Sound.master(); vibrate([0, 40, 60, 40]);
+  } else if (S.taps === C.hypeFrom) {             // 専用表情
+    S.hyped = true;
+    charaFace("hype", true);
+    Sound.bonus(); vibrate([0, 20, 30, 20]);
+  }
 }
 // 必要タップ数が1のときは伏せる（1回で勝てることは見せない）
 function paintTapCount() {
