@@ -410,6 +410,13 @@ body {
 #res-rate-block { display: none; flex-direction: column; gap: 4px; text-align: center; }
 #res-rate { font-family: var(--font-title); font-weight: 900; font-size: 36px; line-height: 1.05; white-space: nowrap; color: var(--me); }
 #res-rate-sub { font-size: 11px; opacity: .55; min-height: 14px; }
+#res-rank-line { font-family: var(--font-title); font-size: 12.5px; color: var(--foe-dark); min-height: 17px; margin-top: 2px; }
+
+/* 到達済みクラスまでの早送り昇格 */
+#warp { gap: 16px; }
+.warp-cap { font-family: var(--font-title); font-size: 11px; letter-spacing: .24em; opacity: .6; }
+#warp-rank { font-size: clamp(26px, 8.6vw, 52px); text-align: center; will-change: transform; }
+#warp-rank.beat { animation: cryin 220ms cubic-bezier(.2,1.5,.4,1); }
 #res-delta { font-family: var(--font-title); font-size: 16px; color: var(--foe-dark); min-height: 20px; }
 
 
@@ -639,14 +646,24 @@ body {
         <div id="res-rate">10</div>
         <div id="res-rate-sub"></div>
         <div id="res-delta"></div>
+        <div id="res-rank-line"></div>
       </div>
     </div>
 
     <div class="btns" id="res-btns">
-      <button class="btn ghost" id="btn-quit">やめる</button>
+      <button class="btn ghost" id="btn-quit">あきらめる</button>
       <button class="btn" id="btn-next">もういちど</button>
     </div>
     <div id="flash"></div>
+  </section>
+
+  <!-- ============ 到達済みクラスまでの早送り昇格 ============ -->
+  <section class="screen" id="warp">
+    <div class="warp-cap">前回の到達クラスまで</div>
+    <div id="warp-rank" class="out">グラニュクラス 3</div>
+    <div class="gauge" style="max-width:340px">
+      <div class="gauge-fill" id="warp-gauge"></div>
+    </div>
   </section>
 
   <!-- ============ 最終成績 ============ -->
@@ -693,7 +710,7 @@ const CONFIG = {
     { name: "ザラメクラス",   en: "COARSE",     tiers: 3 },
     { name: "カラメルクラス", en: "CARAMEL",    tiers: 3 }
   ],
-  masterRank: { name: "ワザンボンクラス", en: "WASANBON" },
+  masterRank: { name: "ワサンボンクラス", en: "WASANBON" },
   /* 通算ティア番号 → 昇格に必要なポイント。最初の2ティアは4、以降は5 */
   tierCost: (flatTierIdx) => flatTierIdx <= 1 ? 4 : 5,
   /* 連勝ボーナス: [この連勝数から, 獲得ポイント倍率] を昇順で。
@@ -701,7 +718,7 @@ const CONFIG = {
   bonusTiers: [[1, 1], [3, 2], [7, 3]],
 
   /* ---- レート ----
-     ワザンボンクラス到達で 1500±200 から開始。
+     ワサンボンクラス到達で 1500±200 から開始。
      初回ゲインは 50±20 で、以降そのゲインが倍々になる（各回 ±20% の揺れつき）。 */
   rate: {
     start: 1500, startJitter: 200,
@@ -715,7 +732,7 @@ const CONFIG = {
       desc: "エンジョイにしてはうまい",
       pop: { base: "推" },            // タップで飛ぶ文字
       tapPower: 0.030,
-      /* 勝つのに必要なタップ数。ワザンボンクラスまでは1回で足りる。
+      /* 勝つのに必要なタップ数。ワサンボンクラスまでは1回で足りる。
          到達後は 2勝ごとに1回ずつ増え、上限 20回。 */
       requiredTaps: (p) => p.master ? Math.min(20, 1 + Math.floor(p.mw / 2)) : 1,
       script: [
@@ -772,7 +789,11 @@ const CONFIG = {
     masterMs:      4200,
     rateBaseMs:    1400,
     ratePerDigitMs:  45,
-    rateCapMs:     3200
+    rateCapMs:     3200,
+    countFrom:        3,   // バトル開始の 3・2・1
+    countStepMs:    300,   // 早めに
+    warpStepMs:     260,   // 到達済みクラスまでの早送り昇格
+    warpHoldMs:    1100
   },
 
   audio:  { enabled: true, basePitch: 220, semitoneStep: 1 },
@@ -825,16 +846,19 @@ const CONFIG = {
   beyondMemes: ["無量大数の彼方", "計測不能", "画面に入りません", "そういう数", "数える人が居ない"],
 
   /* ---- 全国ランキング ----
-     ワザンボンクラスに到達するまでは出さない（そこまでは順位を語る意味がない）。
+     ワサンボンクラスに到達するまでは出さない（そこまでは順位を語る意味がない）。
      到達後は 10万人の母集団を想定し、1勝ごとに順位が decay 倍ずつ上がっていく。 */
+  /* 母集団は全世界人口くらいのばかげた規模。到達時点では20億位という無意味さから始まり、
+     レートが上がるほど順位が跳ね上がる（65勝ほどで1位に届く）。 */
   ranking: {
-    totalPlayers: 100000,
-    rankAtMaster: 10000,     // 到達した時点の順位（＝上位10%）
-    decayPerWin: 0.85        // 1勝ごとにこの割合まで順位が上がる
+    totalPlayers: 8000000000,
+    rankAtMaster: 2000000000,
+    decayPerWin: 0.72,
+    foeSpread: 0.25          // 相手はこの範囲で近い順位から選ばれる
   },
 
   /* ---- 対戦相手 ----
-     カラメルクラス以下と、ワザンボンクラス以上で名簿を完全に分ける。
+     カラメルクラス以下と、ワサンボンクラス以上で名簿を完全に分ける。
      下は「その辺にいる甘い物」、上は「格の違う何か」。 */
   npcsLower: [
     "シロップ","ペコ","ミント","ハッカ","ヌガー","マカロン","タルト","アイシング",
@@ -864,7 +888,7 @@ const CONFIG = {
       finish: ["わああーっ!","押し切れーっ!","油断しない!"],
       win:    ["しゃあ!","いひひ……!!","ふう、もう1回!","こんなん笑う～"],
       promo:  ["はあ～、順調!!","よしよし","抜けた～!"],
-      master: ["ワザンボンきた!ここからが本番!!"],
+      master: ["ワサンボンきた!ここからが本番!!"],
       end:    ["……つかれた","勝てね～……","向いてないんか","ここがラコの限界だった"]
     },
     ou: {
@@ -939,6 +963,8 @@ function streakMiniHTML(n) {
   return "1戦目";
 }
 function streakPlain(n) { return n.toLocaleString("en-US") + (n >= 2 ? " 連勝" : " 勝"); }
+// 早送り昇格でもらった分を除いた、今シーズンの実勝利数
+function streakShown() { return S.streak - S.warp; }
 
 function rankLabel(p) { return p.master ? p.name : p.name + " " + p.tier; }
 function rankHTML(p) { return p.name + (p.tier ? '<span class="tier">' + p.tier + "</span>" : ""); }
@@ -969,7 +995,7 @@ const Rate = {
   gainExact: null,
   lastGainLog: 0, lastGainExact: null,
 
-  // ワザンボンクラス到達時。1500±200 から始める
+  // ワサンボンクラス到達時。1500±200 から始める
   start() {
     const C = CONFIG.rate;
     const r = C.start + (Math.random() * 2 - 1) * C.startJitter;
@@ -1149,6 +1175,7 @@ const Sound = (() => {
     lose()  { or("lose",   () => { tone(7, 0.34, "triangle", 0.11, 0); tone(4, 0.4, "triangle", 0.1, 0.1); }); },
     gauge(s){ or("gauge",  () => tone(20 + s, 0.09, "square", 0.09)); },
     bonus() { or("bonus",  () => [24, 28, 33].forEach((s, i) => tone(s, 0.11, "square", 0.12, i * 0.06))); },
+    count(n){ or("count",  () => tone(n === 1 ? 26 : 14, 0.12, "square", 0.13)); },
     tierUp(){ or("tierup", () => [19, 24, 28].forEach((s, i) => tone(s, 0.2, "triangle", 0.16, i * 0.10))); },
     rankUp(){ or("rankup", () => [19, 24, 28, 31, 36].forEach((s, i) => tone(s, 0.24, "triangle", 0.17, i * 0.11))); },
     master(){ or("master", () => [12, 19, 24, 31, 36, 43].forEach((s, i) => tone(s, 0.34, "sawtooth", 0.16, i * 0.12))); },
@@ -1172,12 +1199,21 @@ const best = (() => {
 })();
 function saveBest() { try { localStorage.setItem(STORE_KEY, JSON.stringify(best)); } catch (e) {} }
 
+/* 一度でもワサンボンクラスに到達したか。到達済みならそこまで駆け上がって始める */
+const REACHED_KEY = "sugarcage_rating_reached";
+const reached = (() => {
+  const def = { rako: false, ou: false };
+  try { return Object.assign(def, JSON.parse(localStorage.getItem(REACHED_KEY) || "{}")); }
+  catch (e) { return def; }
+})();
+function saveReached() { try { localStorage.setItem(REACHED_KEY, JSON.stringify(reached)); } catch (e) {} }
+
 /* ============================================================
    DOM
    ============================================================ */
 const $ = (id) => document.getElementById(id);
 const el = {
-  screens: { title: $("title"), battle: $("battle"), clash: $("clash"), result: $("result"), final: $("final") },
+  screens: { title: $("title"), battle: $("battle"), clash: $("clash"), result: $("result"), warp: $("warp"), final: $("final") },
   bg: Array.from(document.querySelectorAll("#bg > div")),
   stage: $("stage"), danger: $("danger"), bgmBtn: $("bgm-btn"), seBtn: $("se-btn"),
   chara: $("chara"), charaImg: $("chara-img"), charaPh: $("chara-ph"),
@@ -1198,8 +1234,9 @@ const el = {
   resStreak: $("res-streak"), resCard: $("res-card"), promoBanner: $("promo-banner"),
   resRank: $("res-rank"), resGaugeNum: $("res-gauge-num"), resGain: $("res-gain"),
   rankGauge: $("rank-gauge"), rankTicks: $("rank-ticks"), rankGlow: $("rank-glow"),
-  resRateBlock: $("res-rate-block"), resRate: $("res-rate"), resRateSub: $("res-rate-sub"), resDelta: $("res-delta"),
+  resRateBlock: $("res-rate-block"), resRate: $("res-rate"), resRateSub: $("res-rate-sub"), resDelta: $("res-delta"), resRankLine: $("res-rank-line"),
   charaWrap: $("chara-wrap"), charaTalk: $("chara-talk"), charaTalkText: $("chara-talk-text"), resBtns: $("res-btns"), flash: $("flash"),
+  warpRank: $("warp-rank"), warpGauge: $("warp-gauge"),
 
   seasonTitle: $("season-title"), newRecord: $("new-record"),
   fRank: $("f-rank"), fStreak: $("f-streak"), fStreakKey: $("f-streak-key"), fRate: $("f-rate"),
@@ -1211,7 +1248,7 @@ const el = {
    状態
    ============================================================ */
 const S = {
-  state: "title", mode: null, streak: 0, taps: 0, required: 1, npc: null, npcRateFactor: 1,
+  state: "title", mode: null, streak: 0, warp: 0, taps: 0, required: 1, npc: null, npcRateFactor: 1, npcRank: null,
   script: null, phaseIdx: 0,
   idleTimer: null, seq: [], countRaf: 0, tugRaf: 0, shakeTimer: null,
   lastResLen: -1, barHalf: 150, lastPct: -1, charaExpr: "", seasonId: 0
@@ -1404,12 +1441,52 @@ function startSeason(mode) {
   S.lastResLen = -1;
   S.charaExpr = "";
   Rate.log = 0; Rate.exact = null;   // 前シーズンのレートを持ち越さない
+  S.warp = 0;
   el.meAvatar.textContent = mode.initial; el.meAvatar.style.background = mode.badge;
   el.cMeAvatar.textContent = mode.initial; el.cMeAvatar.style.background = mode.badge;
   el.meName.textContent = mode.name; el.cMeName.textContent = mode.name;
   el.pctMeName.textContent = mode.name;
   curBg = -1; applyBg(0);
-  beginBattle();
+
+  // 一度ワサンボンまで行ったキャラは、そこまで駆け上がってから始める。
+  // 一気に飛ばさず1クラスずつ昇格を見せる（ただし早送り）。
+  if (reached[mode.key]) warpToMaster(beginBattle);
+  else beginBattle();
+}
+
+/* ---- 到達済みクラスまでの早送り昇格 ---- */
+function warpToMaster(done) {
+  clearTimers();
+  S.state = "warp";
+  charaShow(false);
+  show("warp");
+  const steps = [];
+  for (let i = 0; i < TIERS.length; i++) {
+    const t = TIERS[i];
+    steps.push({ label: CONFIG.ranks[t.rankIdx].name + " " + t.label, ratio: (i + 1) / (TIERS.length + 1) });
+  }
+  steps.push({ label: CONFIG.masterRank.name, ratio: 1, master: true });
+
+  let i = 0;
+  const step = () => {
+    if (i >= steps.length) {
+      S.streak = MASTER_AT_WINS;
+      S.warp = MASTER_AT_WINS;        // この分は今シーズンの連勝に数えない
+      Rate.start();
+      applyBg(S.streak);
+      seq(CONFIG.fx.warpHoldMs, done);
+      return;
+    }
+    const s = steps[i++];
+    el.warpRank.textContent = s.label;
+    el.warpRank.classList.remove("beat"); void el.warpRank.offsetWidth; el.warpRank.classList.add("beat");
+    setGauge(el.warpGauge, s.ratio, CONFIG.fx.warpStepMs);
+    if (s.master) { Sound.master(); flash(); vibrate([0, 40, 60, 40]); }
+    else { Sound.tierUp(); vibrate([0, 12, 20, 12]); }
+    seq(s.master ? CONFIG.fx.warpHoldMs : CONFIG.fx.warpStepMs, step);
+  };
+  setGauge(el.warpGauge, 0, 0);
+  step();
 }
 
 /* ============================================================
@@ -1429,13 +1506,19 @@ function beginBattle() {
   // 勝つのに必要なタップ数。足りないままバトルが終わるとシーズン終了になる
   S.required = S.mode.requiredTaps(p);
   S.npcRateFactor = 0.72 + Math.random() * 0.40;   // 相手のダミーレート倍率
+  const myRk = nationalRank(S.streak);
+  S.npcRank = myRk ? foeRankOf(myRk.rank) : null;  // 近い順位から相手を拾う
 
   el.npcAvatar.textContent = S.npc.initial;
   el.npcName.textContent = S.npc.name;
-  el.npcTitle.textContent = S.npc.title + (p.master ? "　RATE " + npcRateString() : "");
+  el.npcTitle.textContent = p.master
+    ? "RATE " + npcRateString() + "　" + S.npcRank.toLocaleString("en-US") + "位"
+    : S.npc.title;
   el.pctFoeName.textContent = S.npc.name;
-  el.meTitle.textContent = rankLabel(p) + (p.master ? "　RATE " + rateNow() : "");
-  el.streakMini.innerHTML = streakMiniHTML(S.streak);
+  el.meTitle.textContent = p.master
+    ? "RATE " + rateNow() + "　" + myRk.rank.toLocaleString("en-US") + "位"
+    : rankLabel(p);
+  el.streakMini.innerHTML = streakMiniHTML(streakShown());
   paintTapCount();
   charaSay("");
 
@@ -1450,8 +1533,22 @@ function beginBattle() {
   measureBar();
   S.tugRaf = requestAnimationFrame(tugFrame);
 
-  resetIdle();
-  nextPhase();
+  // 3・2・1 のカウントダウンを挟んでから台本を回す。
+  // このあいだのタップも普通に数える（1回で足りるキャラの取りこぼしを防ぐ）
+  countdown(() => { resetIdle(); nextPhase(); });
+}
+
+function countdown(done) {
+  let n = CONFIG.fx.countFrom;
+  const step = () => {
+    if (n <= 0) { el.phaseCry.textContent = ""; done(); return; }
+    el.phaseCry.textContent = String(n);
+    el.phaseCry.classList.remove("beat"); void el.phaseCry.offsetWidth; el.phaseCry.classList.add("beat");
+    Sound.count(n);
+    n--;
+    seq(CONFIG.fx.countStepMs, step);
+  };
+  step();
 }
 
 function resetIdle() {
@@ -1496,9 +1593,7 @@ function onTap() {
 }
 // 必要タップ数が1のときは伏せる（1回で勝てることは見せない）
 function paintTapCount() {
-  el.tapCount.textContent = S.required > 1
-    ? S.taps + " / " + S.required + " タップ"
-    : S.taps + " タップ";
+  el.tapCount.textContent = S.taps + " タップ";   // 必要数は見せない
 }
 
 function shake() {
@@ -1582,13 +1677,14 @@ function toResult() {
   const now  = progressOf(S.streak);
   const promoting = (kind === "tierup" || kind === "rankup" || kind === "master");
 
-  el.resStreak.innerHTML = streakBigHTML(S.streak);
+  el.resStreak.innerHTML = streakBigHTML(streakShown());
   el.resStreak.classList.remove("go");
   el.resCard.classList.remove("on", "pump");
   el.resBtns.classList.remove("on");
   el.promoBanner.classList.remove("go");
   el.promoBanner.style.display = "none";
   el.resGain.classList.remove("on", "x2");
+  el.resRankLine.textContent = "";
   charaSay("");
 
   if (prev.master) {
@@ -1628,6 +1724,8 @@ function toResult() {
       CONFIG.fx.rateBaseMs + CONFIG.fx.ratePerDigitMs * (Math.floor(newExp) + 1));
     seq(t, () => {
       el.resDelta.textContent = "+ " + rateGainNow();
+      const rk = nationalRank(S.streak);
+      if (rk) el.resRankLine.textContent = rankLine(rk) + " ／ " + pctLabel(rk.pct);
       charaSay(pick(CONFIG.talk[S.mode.key].win));
       countUp(prevExp, newExp, rateDur * 0.75);
       Sound.gauge(6);
@@ -1716,6 +1814,8 @@ function countUp(fromExp, toExp, dur) {
   cancelAnimationFrame(S.countRaf);
   const land = () => paintRate(rateNow(), readingFor(Rate.log));
   if (dur <= 0 || fromExp === toExp) { land(); return; }
+  // rAF が止まる環境（非表示タブ等）でも必ず着地させる
+  seq(dur + 40, land);
   const t0 = performance.now();
   const step = (now) => {
     const k = Math.min(1, (now - t0) / dur);
@@ -1752,19 +1852,21 @@ function endSeason() {
 
   const streak = S.streak;
   const p = progressOf(streak);
-  const isNew = streak > best[S.mode.key];
-  if (isNew) { best[S.mode.key] = streak; saveBest(); }
-  el.newRecord.style.display = isNew && streak > 0 ? "" : "none";
+  const shown = streakShown();               // 早送りぶんは今シーズンの戦績に数えない
+  if (p.master && !reached[S.mode.key]) { reached[S.mode.key] = true; saveReached(); }
+  const isNew = shown > best[S.mode.key];
+  if (isNew) { best[S.mode.key] = shown; saveBest(); }
+  el.newRecord.style.display = isNew && shown > 0 ? "" : "none";
 
   const rk = nationalRank(streak);
   el.seasonTitle.textContent = new Date().getFullYear() + " SEASON 最終成績";
 
   el.fRank.textContent = rankLabel(p);
-  el.fStreakKey.textContent = streak >= 2 ? "最高連勝" : "勝利数";
-  el.fStreak.textContent = streak.toLocaleString("en-US");
+  el.fStreakKey.textContent = shown >= 2 ? "最高連勝" : "勝利数";
+  el.fStreak.textContent = shown.toLocaleString("en-US");
   el.fRate.textContent = p.master ? rateNow() : "— （" + CONFIG.masterRank.name + "未到達）";
   if (rk) {
-    el.fRankPos.textContent = "全国 " + rk.rank.toLocaleString("en-US") + " 位";
+    el.fRankPos.textContent = rankLine(rk);
     el.fParticipants.textContent = rk.total.toLocaleString("en-US") + " 人中 ／ " + pctLabel(rk.pct);
   } else {
     el.fRankPos.textContent = "— 位";
@@ -1773,7 +1875,7 @@ function endSeason() {
   charaSay(pick(CONFIG.talk[S.mode.key].end));   // セリフはキャラの吹き出しから
   show("final");
 }
-/* ワザンボンクラス未到達なら null。到達後はレートが上がるほど順位が上がる。 */
+/* ワサンボンクラス未到達なら null。到達後はレートが上がるほど順位が上がる。 */
 function nationalRank(streak) {
   const p = progressOf(streak);
   if (!p.master) return null;
@@ -1782,7 +1884,14 @@ function nationalRank(streak) {
   const rank = Math.max(1, Math.min(R.totalPlayers, Math.round(raw)));
   return { rank, total: R.totalPlayers, pct: (rank / R.totalPlayers) * 100 };
 }
-function pctLabel(pct) { return pct < 0.01 ? "上位 0.01% 未満" : "上位 " + pct.toFixed(2) + "%"; }
+function pctLabel(pct) { return pct < 0.0001 ? "上位 0.0001% 未満" : "上位 " + pct.toFixed(4).replace(/0+$/, "").replace(/\.$/, "") + "%"; }
+function rankLine(rk) { return "全世界 " + rk.rank.toLocaleString("en-US") + " 位"; }
+/* 対戦相手は自分の近い順位から拾う */
+function foeRankOf(myRank) {
+  const R = CONFIG.ranking;
+  const f = 1 + (Math.random() * 2 - 1) * R.foeSpread;
+  return Math.max(1, Math.min(R.totalPlayers, Math.round(myRank * f)));
+}
 
 $("btn-next").addEventListener("click", () => { Sound.button(); if (S.state === "result") nextBattle(); });
 $("btn-quit").addEventListener("click", () => { Sound.button(); if (S.state === "result") endSeason(); });
@@ -1826,7 +1935,7 @@ function shareCard() {
   g.fillStyle = INK; g.font = "26px " + F;
   g.fillText(new Date().getFullYear() + " SEASON 最終成績 ／ " + S.mode.name, W / 2, 100);
   outText(rankLabel(p), 208, 78, ME);
-  outText(streakPlain(streak), 330, 104, ME);
+  outText(streakPlain(streak - S.warp), 330, 104, ME);
 
   if (p.master) {
     const rateStr = rateNow();
@@ -1854,7 +1963,7 @@ function shareCard() {
     if (!blob) return;
     const file = new File([blob], fileName, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], text: rankLabel(p) + " ／ " + streakPlain(streak) + "で手が止まった。" }).catch(() => {});
+      navigator.share({ files: [file], text: rankLabel(p) + " ／ " + streakPlain(streak - S.warp) + "で手が止まった。" }).catch(() => {});
       return;
     }
     const url = URL.createObjectURL(blob);
