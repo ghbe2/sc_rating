@@ -142,6 +142,27 @@ body {
 #chara-ph .ph-tag  { font-family: var(--font-title); font-size: 9px; opacity: .55; }
 #chara-ph .ph-top  { position: absolute; top: 8px; font-family: var(--font-title); font-size: 9px; opacity: .5; }
 
+/* ---------- サウンド切替（全画面共通・右上固定） ---------- */
+#sound-btn {
+  position: fixed; z-index: 10;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  width: 40px; height: 40px; padding: 0;
+  display: grid; place-items: center;
+  font-family: var(--font-title); font-size: 19px; line-height: 1;
+  color: var(--ink); background: #fff;
+  border: 3px solid var(--ink); cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, 100% 76%, 82% 100%, 0 100%);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+#sound-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+#sound-btn.off { color: rgba(43,31,36,.35); }
+#sound-btn.off::after {          /* 消音時は斜線を引く */
+  content: ""; position: absolute; left: 4px; right: 4px; top: 50%;
+  height: 3px; background: var(--me); transform: rotate(-38deg);
+}
+
 #stage { position: fixed; inset: 0; z-index: 4; will-change: transform; }
 
 .screen {
@@ -240,6 +261,8 @@ body {
 
 /* ================= バトル ================= */
 #battle { justify-content: space-between; gap: 0; }
+/* 右上のサウンドボタンに相手ブロックが潜り込まないよう逃がす */
+#battle > .side:first-of-type { padding-right: 46px; }
 .side { width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .fighter { display: flex; align-items: center; gap: 9px; }
 .fighter.right { flex-direction: row-reverse; text-align: right; }
@@ -362,7 +385,8 @@ body {
 @keyframes flash { 0% { opacity: .9; } 100% { opacity: 0; } }
 
 /* ================= 最終成績 ================= */
-#final { justify-content: flex-start; padding-top: 4.5vh; gap: 13px; overflow-y: auto; }
+/* スクロールする画面なので、右上のサウンドボタンの下から始める */
+#final { justify-content: flex-start; padding-top: 62px; gap: 13px; overflow-y: auto; }
 #final .season-title { font-family: var(--font-title); font-size: 11px; letter-spacing: .26em; opacity: .6; }
 #new-record { font-family: var(--font-title); font-size: 13px; color: var(--me); letter-spacing: .08em; }
 .sheet { width: min(94vw, 460px); }
@@ -415,6 +439,9 @@ body {
 </style>
 </head>
 <body>
+
+<!-- 全画面共通のサウンド切替。#stage(4) と #chara-wrap(5) より上に置く -->
+<button id="sound-btn" aria-label="サウンド切替" title="サウンド切替">♪</button>
 
 <div id="bg">
   <div class="sg0 on"></div><div class="sg1"></div><div class="sg2"></div>
@@ -1015,7 +1042,7 @@ const $ = (id) => document.getElementById(id);
 const el = {
   screens: { title: $("title"), battle: $("battle"), clash: $("clash"), result: $("result"), final: $("final") },
   bg: Array.from(document.querySelectorAll("#bg > div")),
-  stage: $("stage"), danger: $("danger"),
+  stage: $("stage"), danger: $("danger"), soundBtn: $("sound-btn"),
   chara: $("chara"), charaImg: $("chara-img"), charaPh: $("chara-ph"),
   phFace: $("ph-face"), phName: $("ph-name"), phTag: $("ph-tag"), phTop: $("ph-top"),
   bestRank: $("best-rank"), bestStreak: $("best-streak"), ladderPeek: $("ladder-peek"),
@@ -1649,6 +1676,35 @@ document.addEventListener("touchend", (e) => {
 document.addEventListener("contextmenu", (e) => { if (S.state !== "title" && S.state !== "final") e.preventDefault(); });
 
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+/* ============================================================
+   サウンド切替（全画面共通）
+   ============================================================ */
+const MUTE_KEY = "sugarcage_rating_muted";
+let muted = (() => { try { return localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { return false; } })();
+
+// 今いる画面に合った BGM を鳴らし直す
+function refreshBgm() {
+  if (S.state === "title") Bgm.title();
+  else if (S.state === "final") Bgm.result(S.seasonId);
+  else if (S.mode) Bgm.battle(S.mode.key, S.seasonId);
+}
+function applyMute() {
+  CONFIG.audio.enabled = !muted;      // 合成音
+  CONFIG.sfx.enabled   = !muted;      // 効果音ファイル
+  CONFIG.bgm.enabled   = !muted;
+  el.soundBtn.classList.toggle("off", muted);
+  el.soundBtn.textContent = "♪";
+  el.soundBtn.setAttribute("aria-pressed", String(!muted));
+  if (muted) { Bgm.stop(); } else { Sound.unlock(); refreshBgm(); }
+}
+el.soundBtn.addEventListener("click", () => {
+  muted = !muted;
+  try { localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) {}
+  applyMute();
+  if (!muted) Sound.button();
+});
+applyMute();
 
 toTitle();
 </script>
