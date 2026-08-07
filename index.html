@@ -411,6 +411,7 @@ body {
 #res-rate { font-family: var(--font-title); font-weight: 900; font-size: 36px; line-height: 1.05; white-space: nowrap; color: var(--me); }
 #res-rate-sub { font-size: 11px; opacity: .55; min-height: 14px; }
 #res-rank-line { font-family: var(--font-title); font-size: 12.5px; color: var(--foe-dark); min-height: 17px; margin-top: 2px; }
+#res-rank-line.down { color: var(--me); }
 
 /* 到達済みクラスまでの早送り昇格 */
 #warp { gap: 16px; }
@@ -853,8 +854,14 @@ const CONFIG = {
   ranking: {
     totalPlayers: 8000000000,
     rankAtMaster: 2000000000,
-    decayPerWin: 0.72,
-    foeSpread: 0.25          // 相手はこの範囲で近い順位から選ばれる
+    decayPerWin: 0.72,       // 一般プレイヤーを抜き去る速さ（60勝ほどで抜ききる）
+    foeSpread: 0.25,         // 対戦相手はこの範囲の近い順位から選ばれる
+    /* 抜ききった先には、同じくレートを走らせている上位陣が居座る。
+       彼らも1勝ごとに伸びるので順位は前後し続け、1位で打ち止めにならない。 */
+    rivals: 8,
+    rivalInitSpread: 0.30,   // 初期のばらつき（log10）
+    rivalPaceJitter: 0.70,   // 1勝あたりの伸びの揺れ
+    rivalPull: 0.14          // 離れすぎないよう引き戻す強さ
   },
 
   /* ---- 対戦相手 ----
@@ -1248,7 +1255,8 @@ const el = {
    状態
    ============================================================ */
 const S = {
-  state: "title", mode: null, streak: 0, warp: 0, taps: 0, required: 1, npc: null, npcRateFactor: 1, npcRank: null,
+  state: "title", mode: null, streak: 0, warp: 0, taps: 0, required: 1, counting: false, pendingWarp: false,
+  npc: null, npcRateFactor: 1, npcRank: null, lastRank: null,
   script: null, phaseIdx: 0,
   idleTimer: null, seq: [], countRaf: 0, tugRaf: 0, shakeTimer: null,
   lastResLen: -1, barHalf: 150, lastPct: -1, charaExpr: "", seasonId: 0
@@ -1441,17 +1449,14 @@ function startSeason(mode) {
   S.lastResLen = -1;
   S.charaExpr = "";
   Rate.log = 0; Rate.exact = null;   // 前シーズンのレートを持ち越さない
-  S.warp = 0;
+  S.warp = 0; S.lastRank = null;
+  S.pendingWarp = !!reached[mode.key];   // 初勝利のあとに一気に駆け上がる
   el.meAvatar.textContent = mode.initial; el.meAvatar.style.background = mode.badge;
   el.cMeAvatar.textContent = mode.initial; el.cMeAvatar.style.background = mode.badge;
   el.meName.textContent = mode.name; el.cMeName.textContent = mode.name;
   el.pctMeName.textContent = mode.name;
   curBg = -1; applyBg(0);
-
-  // 一度ワサンボンまで行ったキャラは、そこまで駆け上がってから始める。
-  // 一気に飛ばさず1クラスずつ昇格を見せる（ただし早送り）。
-  if (reached[mode.key]) warpToMaster(beginBattle);
-  else beginBattle();
+  beginBattle();          // 早送りは初勝利のあと（nextBattle）で走らせる
 }
 
 /* ---- 到達済みクラスまでの早送り昇格 ---- */
@@ -1470,9 +1475,10 @@ function warpToMaster(done) {
   let i = 0;
   const step = () => {
     if (i >= steps.length) {
+      S.warp = MASTER_AT_WINS - S.streak;   // 早送りでもらった分
       S.streak = MASTER_AT_WINS;
-      S.warp = MASTER_AT_WINS;        // この分は今シーズンの連勝に数えない
-      Rate.start();
+
+      Rate.start(); World.init();
       applyBg(S.streak);
       seq(CONFIG.fx.warpHoldMs, done);
       return;
@@ -1540,8 +1546,9 @@ function beginBattle() {
 
 function countdown(done) {
   let n = CONFIG.fx.countFrom;
+  S.counting = true;                       // この間のタップは数えない
   const step = () => {
-    if (n <= 0) { el.phaseCry.textContent = ""; done(); return; }
+    if (n <= 0) { el.phaseCry.textContent = ""; S.counting = false; done(); return; }
     el.phaseCry.textContent = String(n);
     el.phaseCry.classList.remove("beat"); void el.phaseCry.offsetWidth; el.phaseCry.classList.add("beat");
     Sound.count(n);
@@ -1581,7 +1588,7 @@ function nextPhase() {
 }
 
 function onTap() {
-  if (S.state !== "battle") return;
+  if (S.state !== "battle" || S.counting) return;   // カウントダウン中は無効
   S.taps++;
   paintTapCount();
   Tug.boost = Math.min(0.34, Tug.boost + S.mode.tapPower);
@@ -1720,12 +1727,23 @@ function toResult() {
     const prevExp = Rate.log;
     Rate.win();                                   // ここでレートが確定する
     const newExp = Rate.log;
+    World.step(prevExp);                          // 上位陣も同じだけ走る
     const rateDur = Math.min(CONFIG.fx.rateCapMs,
       CONFIG.fx.rateBaseMs + CONFIG.fx.ratePerDigitMs * (Math.floor(newExp) + 1));
     seq(t, () => {
       el.resDelta.textContent = "+ " + rateGainNow();
       const rk = nationalRank(S.streak);
-      if (rk) el.resRankLine.textContent = rankLine(rk) + " ／ " + pctLabel(rk.pct);
+      if (rk) {
+        // 上位陣とのつばぜり合いが見えるよう、前回からの増減を出す
+        let move = "";
+        if (S.lastRank !== null && S.lastRank !== rk.rank) {
+          const d = S.lastRank - rk.rank;
+          move = d > 0 ? "　▲" + d.toLocaleString("en-US") : "　▼" + (-d).toLocaleString("en-US");
+        }
+        el.resRankLine.textContent = rankLine(rk) + move;
+        el.resRankLine.classList.toggle("down", S.lastRank !== null && rk.rank > S.lastRank);
+        S.lastRank = rk.rank;
+      }
       charaSay(pick(CONFIG.talk[S.mode.key].win));
       countUp(prevExp, newExp, rateDur * 0.75);
       Sound.gauge(6);
@@ -1762,7 +1780,7 @@ function toResult() {
           el.resGain.style.display = "none";
           el.resRateBlock.style.display = "flex";
           S.lastResLen = -1;
-          Rate.start();                            // ここで初期レートを引く
+          Rate.start(); World.init();              // 初期レートと上位陣を用意
           paintRate(rateNow(), "");
           el.resDelta.textContent = "ここからレート戦";
           charaSay(pick(CONFIG.talk[S.mode.key].master));
@@ -1833,6 +1851,8 @@ function nextBattle() {
   clearSeq();
   cancelAnimationFrame(S.countRaf);
   applyBg(S.streak);
+  // 到達済みキャラは、初勝利を挙げてから一気に駆け上がる
+  if (S.pendingWarp) { S.pendingWarp = false; warpToMaster(beginBattle); return; }
   beginBattle();
 }
 
@@ -1875,14 +1895,45 @@ function endSeason() {
   charaSay(pick(CONFIG.talk[S.mode.key].end));   // セリフはキャラの吹き出しから
   show("final");
 }
-/* ワサンボンクラス未到達なら null。到達後はレートが上がるほど順位が上がる。 */
+/* ---- 上位陣 ----
+   一般プレイヤーを抜ききった後も、同じくレートを走らせている連中が残る。
+   彼らは自分の伸びに揺れを乗せて追随するので、順位は永久に前後する。 */
+const World = {
+  rivals: [],
+  init() {
+    const R = CONFIG.ranking;
+    this.rivals = [];
+    for (let i = 0; i < R.rivals; i++) {
+      this.rivals.push({
+        name: pick(CONFIG.npcsMaster),
+        log: Rate.log + (Math.random() * 2 - 1) * R.rivalInitSpread
+      });
+    }
+  },
+  /* 自分との差（オフセット）を 0 に引き戻しつつ揺らす。
+     引き戻しは必ず「加算前の自分」との差で測ること。更新後の値で測ると、
+     引き戻しぶんがそのまま加速になって全員が自分を追い越してしまう。 */
+  step(prevLog) {
+    const R = CONFIG.ranking;
+    const stepLog = Rate.log - prevLog;
+    for (const r of this.rivals) {
+      const offset = (r.log - prevLog) * (1 - R.rivalPull);
+      const noise = stepLog * (Math.random() * 2 - 1) * R.rivalPaceJitter;
+      r.log = Rate.log + offset + noise;
+    }
+  },
+  above() { let n = 0; for (const r of this.rivals) if (r.log > Rate.log) n++; return n; }
+};
+
+/* ワサンボンクラス未到達なら null。 */
 function nationalRank(streak) {
   const p = progressOf(streak);
   if (!p.master) return null;
   const R = CONFIG.ranking;
-  const raw = R.rankAtMaster * Math.pow(R.decayPerWin, p.mw);
-  const rank = Math.max(1, Math.min(R.totalPlayers, Math.round(raw)));
-  return { rank, total: R.totalPlayers, pct: (rank / R.totalPlayers) * 100 };
+  // 一般プレイヤーのうち、まだ自分より上に居る数
+  const mass = Math.max(0, Math.round(R.rankAtMaster * Math.pow(R.decayPerWin, p.mw)) - R.rivals);
+  const rank = Math.max(1, Math.min(R.totalPlayers, mass + World.above() + 1));
+  return { rank, total: R.totalPlayers, pct: (rank / R.totalPlayers) * 100, rivalsAbove: World.above() };
 }
 function pctLabel(pct) { return pct < 0.0001 ? "上位 0.0001% 未満" : "上位 " + pct.toFixed(4).replace(/0+$/, "").replace(/\.$/, "") + "%"; }
 function rankLine(rk) { return "全世界 " + rk.rank.toLocaleString("en-US") + " 位"; }
