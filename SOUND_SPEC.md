@@ -60,17 +60,31 @@
 
 ---
 
-## 2. BGM — 2ファイル（任意）
+## 2. BGM
 
-ループ再生します。**ループ点で無音やプツッというノイズが出ないよう、末尾と先頭を繋げてください。**
+**バトル曲はキャラごとに複数持てます。** シーズン開始時に1曲ランダムで選ばれ、
+そのシーズン中は同じ曲が鳴り続けます（1戦ごとに切り替えると曲が頭出しに戻り続けるため）。
 
-| ファイル名 | 場面 | 長さ | 内容の指定 |
-|---|---|---|---|
-| `bgm_title.mp3` | タイトル画面 | 20〜40秒ループ | 軽く、待たせない |
-| `bgm_battle.mp3` | **バトル〜決着〜リザルト**（戦闘中ずっと） | 40〜90秒ループ | 1回のプレイで数分間鳴り続けます。**主張しすぎないこと**。SEが上に乗るので中音域を空けてもらえると助かります |
+| 配置 | ファイル | 場面 |
+|---|---|---|
+| `CONFIG.bgm.title` | `opening.mp3` | タイトル画面 |
+| `CONFIG.bgm.battle.rako` | `rako_battle01.mp3` / `rako_battle02.mp3` | ラコ選択時のバトル〜決着〜リザルト |
+| `CONFIG.bgm.battle.ou` | `ou_battle01.mp3` / `ou_battle02.mp3` | オウ選択時のバトル〜決着〜リザルト |
+| `CONFIG.bgm.result` | （未設定） | 最終成績 |
 
-最終成績画面は**無音**にしてあります（`end.mp3` を聴かせるため）。ここにもBGMが欲しい場合は
-`CONFIG.bgm.files.result` にファイル名を入れれば鳴ります。
+### 曲を増やすとき
+
+`index.html` の `CONFIG.bgm` の配列にファイル名を足すだけです。連番である必要はありません。
+
+```js
+battle: {
+  rako: ["rako_battle01.mp3", "rako_battle02.mp3", "rako_battle03.mp3"],
+  ou:   ["ou_battle01.mp3",   "ou_battle02.mp3"]
+},
+result: ["result01.mp3"]
+```
+
+空配列にすればその場面は無音になります。
 
 ---
 
@@ -98,7 +112,7 @@ breakdown, half-time, sub bass, applause, sound effects, silence
 
 ---
 
-### `bgm_battle.mp3` — 本命
+### `rako_battle01/02.mp3` `ou_battle01/02.mp3` — バトル（キャラごとに2曲）
 
 一番長く聴かせる曲です。**主張しすぎないこと**を最優先にしてください。
 1プレイで何十回もループし、その上に効果音が全部乗ります。
@@ -116,7 +130,7 @@ retro handheld game battle theme
   そこがループに当たったときバトルの熱が落ちます**
 - `mid-range left open` は効果音の帯域を空けてもらうための指定です
 
-### `bgm_battle.mp3` — 別案（もっとバカゲー寄り）
+#### 別案（もっとバカゲー寄り）
 
 上が「ちゃんとしすぎ」と感じたらこちら。
 
@@ -126,7 +140,57 @@ brass hits, 172 BPM, absurdly cheerful, comedic and slightly unhinged,
 tight snare rolls, candy shop energy, no vocals, loopable game battle theme
 ```
 
-### `bgm_title.mp3`
+### `result01.mp3` — 最終成績（作り直し版）
+
+**前回が落ち着きすぎた原因は、プロンプトに `calm` `sparse` `wistful` を入れていたからです。**
+あれはタイトル画面向けの指定で、バトル後の画面には合いませんでした。作り直します。
+
+狙いは **スポーツ大会の表彰式**。ファンファーレで始まり、そのまま行進曲的に流れ続ける曲です。
+全国ランキングの結果発表を眺める画面なので、**大げさであればあるほど良い**（どうせ最下位です）。
+
+```
+Triumphant brass fanfare opening into an upbeat sports tournament awards
+ceremony march, bright trumpet and horn section, marching snare rolls and
+timpani, 8-bit square lead doubling the brass melody, major key, 130 BPM,
+celebratory and grand, stadium victory ceremony energy, glockenspiel sparkle,
+starts immediately on a fanfare hit with no intro, loopable
+```
+
+**必ず入れる指定**
+
+| 指定 | 理由 |
+|---|---|
+| `Triumphant brass fanfare opening` | 画面が切り替わった瞬間に鳴ってほしい |
+| `starts immediately on a fanfare hit with no intro` | Suno は放っておくと静かな入りを作ります |
+| `sports tournament awards ceremony march` | 「バトルの後」の質感はここで決まります |
+| `130 BPM` | 表彰式の行進テンポ。速すぎるとバトルの続きに聞こえます |
+| `8-bit square lead doubling the brass` | 生ブラスだけだと しゅがけ から浮きます |
+
+**Exclude Styles**（共通のものに加えて）:
+
+```
+calm, gentle, sparse, ambient, wistful, melancholic, slow, ballad, lo-fi
+```
+
+前回の失敗を繰り返さないため、`calm / gentle / sparse / wistful` は明示的に除外してください。
+
+#### 別案（風刺を強めたい場合）
+
+```
+Pompous grand awards ceremony fanfare, overblown brass and timpani, comically
+self-important, chiptune square lead, 126 BPM, majestic and slightly kitsch,
+retro game victory ceremony, no vocals, loopable
+```
+
+`comically self-important`（滑稽なほど偉そう）が効きます。**無意味な数字を大仰に表彰する**という
+このゲームの芯に、曲だけで説明を足せます。
+
+#### 置き方
+
+複数用意する場合は `result01.mp3` `result02.mp3` … と連番にして、
+`index.html` の `CONFIG.bgm.result` の配列に足してください。バトル曲と同じくランダムで選ばれます。
+
+### `opening.mp3` — タイトル
 
 タイトルは数秒しか見ないので、短く・軽く。
 
@@ -186,13 +250,13 @@ arrangement, cute retro handheld title screen theme, calm but inviting, loopable
           ボタンが出て停止（自動では進みません）→ button
 ```
 
-シーズン終了時のみ `end` が鳴り、BGMは止まります。
+シーズン終了時のみ `end` が鳴り、BGM は最終成績用に切り替わります（未設定なら無音）。
 
 ---
 
 ## 4. 実装側の仕組み（音を作る人は読まなくて大丈夫です）
 
-- `CONFIG.sfx.files` / `CONFIG.bgm.files` にファイル名を定義
+- `CONFIG.sfx.files` / `CONFIG.bgm` にファイル名を定義
 - 起動後、最初のユーザー操作で `Sfx.load()` が全ファイルの読み込みを試行
 - **読み込めたものだけ**がファイル再生に切り替わり、失敗したものは既存の合成音のまま
 - `tap` のみ5個のプールを持ち、連打で重なって鳴る

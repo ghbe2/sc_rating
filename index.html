@@ -112,26 +112,26 @@ body {
 
 #chara {
   position: relative;
-  width: min(34vw, 180px);
+  width: min(46vw, 250px);
   opacity: 0; transform: translate3d(-8px, 16px, 0);
   transition: opacity 300ms ease, transform 300ms ease, width 300ms ease;
   will-change: transform, opacity;
 }
 #chara.on { opacity: 1; transform: translate3d(0,0,0); }
-#chara.mini { width: min(22vw, 104px); opacity: .95; }
+#chara.mini { width: min(30vw, 150px); opacity: .95; }
 /* クラス名は .pop（タップ粒子）と衝突させないこと。あちらは position:absolute; top:50% を持つ */
 #chara.bump { animation: charapop 420ms cubic-bezier(.2,1.6,.4,1); }
 @keyframes charapop { 0% { transform: scale(.86) translateY(10px);} 60% { transform: scale(1.05);} 100% { transform: scale(1);} }
-/* 縦横比を 3:4 に固定する。8枚のサイズが揃っていなくても表示位置が動かないよう、
-   はみ出しは下端中央を基準に収める（立ち絵は画面下辺に接地する前提） */
+/* 実素材は 960x720（4:3 の横長）。8枚のサイズが揃っていなくても表示位置が動かないよう
+   比率を固定し、はみ出しは下端中央を基準に収める（立ち絵は画面下辺に接地する前提） */
 #chara img {
   width: 100%; display: block;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 3;
   object-fit: contain; object-position: bottom center;
 }
 /* 画像が無いときのプレースホルダ */
 #chara-ph {
-  width: 100%; aspect-ratio: 3 / 4;
+  width: 100%; aspect-ratio: 4 / 3;
   background: #fff; border: 4px solid var(--ink); border-bottom: 0;
   border-radius: 46% 46% 6px 6px / 30% 30% 6px 6px;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -376,7 +376,7 @@ body {
 
 /* ================= スマホ最適化 ================= */
 /* 最終成績はスクロールするので、左下のキャラに最後の要素が潜り込まないよう逃がす */
-#final { padding-bottom: calc(min(22vw, 104px) * 1.34 + 92px); }  /* 左下のキャラ＋吹き出しを避ける */
+#final { padding-bottom: calc(min(30vw, 150px) * 0.75 + 92px); }  /* 左下のキャラ＋吹き出しを避ける */
 
 /* 縦が短い端末（iPhone SE 等 667px 以下）: 余白と文字を詰める */
 @media (max-height: 700px) {
@@ -388,7 +388,7 @@ body {
   .card { padding: 11px 11px 13px; gap: 7px; }
   .tug { height: 30px; }
   #tug-knob { height: 42px; }
-  #chara { width: min(28vw, 150px); }
+  #chara { width: min(38vw, 210px); }
   #tap-count { margin-top: 8px; }
   #talk { margin-top: 6px; }
 }
@@ -654,15 +654,15 @@ const CONFIG = {
   chara: {
     enabled: true,
     side: "left",           // 右利きの親指で隠れないよう左下に置く
-    dir: "images/",
+    dir: "images/characters/",
     images: {
-      rako: { normal: "rako_normal.png", surprise: "rako_surprise.png", happy: "rako_happy.png", bored: "rako_bored.png" },
-      ou:   { normal: "ou_normal.png",   surprise: "ou_surprise.png",   happy: "ou_happy.png",   bored: "ou_bored.png" }
+      rako: { normal: "rako_normal.png", surprise: "rako_surprise.png", win: "rako_win.png", lose: "rako_lose.png" },
+      ou:   { normal: "ou_normal.png",   surprise: "ou_surprise.png",   win: "ou_win.png",   lose: "ou_lose.png" }
     },
-    /* プレースホルダ用の顔文字と説明（添付サンプルの4表情に対応） */
+    /* 画像が読めなかったときのプレースホルダ用 */
     faces: {
-      rako: { normal: ["・_・","真顔"], surprise: ["Ｏ_Ｏ","驚き"], happy: ["＞_＜","キラキラ"], bored: ["－_－","頬杖"] },
-      ou:   { normal: ["・ᴗ・","ニヤリ"], surprise: ["・o・","余裕"],  happy: ["＾▽＾","笑い"],   bored: ["－ᴗ・","ウィンク"] }
+      rako: { normal: ["・_・","真顔"], surprise: ["Ｏ_Ｏ","驚き"], win: ["＞_＜","勝利"], lose: ["－_－","終了"] },
+      ou:   { normal: ["・ᴗ・","平静"], surprise: ["・o・","反応"], win: ["＾▽＾","勝利"], lose: ["－ᴗ・","終了"] }
     }
   },
 
@@ -708,11 +708,20 @@ const CONFIG = {
       button:   "button.mp3"
     }
   },
+  /* ---- BGM ----
+     battle はキャラごとに配列を持ち、シーズン開始時に1曲ランダムで選ぶ。
+     シーズン中は選ばれた曲を鳴らし続ける（1戦ごとに切り替えると曲が頭出しに戻り続けるため）。
+     曲を増やしたいときは配列に足すだけ。空配列にすればその場面は無音になる。 */
   bgm: {
     enabled: true,
     dir: "sounds/",
     volume: 0.35,
-    files: { title: "bgm_title.mp3", battle: "bgm_battle.mp3", result: "" }
+    title:  ["opening.mp3"],
+    battle: {
+      rako: ["rako_battle01.mp3", "rako_battle02.mp3"],
+      ou:   ["ou_battle01.mp3",   "ou_battle02.mp3"]
+    },
+    result: []     // 最終成績。ファイルを入れるとここで鳴る
   },
 
   units: ["", "万","億","兆","京","垓","秭","穣","溝","澗",
@@ -890,21 +899,27 @@ const Sfx = (() => {
 
 /* ---- BGM 層 ---- */
 const Bgm = (() => {
-  let cur = null, curKey = "";
-  function play(key) {
+  let cur = null, curId = "";
+  /* id が同じあいだは同じ曲を鳴らし続ける。id が変わったときだけ選び直す。 */
+  function playList(id, list) {
     if (!CONFIG.bgm.enabled) return;
-    if (key === curKey) return;
-    const file = CONFIG.bgm.files[key];
+    if (id === curId) return;
     if (cur) { cur.pause(); cur = null; }
-    curKey = key;
-    if (!file) return;
+    curId = id;
+    if (!list || !list.length) return;
+    const file = list[Math.floor(Math.random() * list.length)];
     const a = new Audio(CONFIG.bgm.dir + file);
     a.loop = true; a.volume = CONFIG.bgm.volume;
     a.addEventListener("error", () => { if (cur === a) cur = null; }, { once: true });
     a.play().then(() => { cur = a; }).catch(() => {});
   }
-  function stop() { if (cur) { cur.pause(); cur = null; } curKey = ""; }
-  return { play, stop };
+  return {
+    title()  { playList("title", CONFIG.bgm.title); },
+    // シーズンごとに1曲選ぶ。seasonId が変わると引き直される。
+    battle(modeKey, seasonId) { playList("battle:" + modeKey + ":" + seasonId, CONFIG.bgm.battle[modeKey]); },
+    result(seasonId) { playList("result:" + seasonId, CONFIG.bgm.result); },
+    stop() { if (cur) { cur.pause(); cur = null; } curId = ""; }
+  };
 })();
 
 const Sound = (() => {
@@ -1006,7 +1021,7 @@ const S = {
   state: "title", mode: null, streak: 0, taps: 0, npc: null,
   script: null, phaseIdx: 0,
   idleTimer: null, seq: [], countRaf: 0, tugRaf: 0, shakeTimer: null,
-  lastResLen: -1, barHalf: 150, lastPct: -1, charaExpr: ""
+  lastResLen: -1, barHalf: 150, lastPct: -1, charaExpr: "", seasonId: 0
 };
 
 function show(name) { Object.keys(el.screens).forEach(k => el.screens[k].classList.toggle("on", k === name)); }
@@ -1130,7 +1145,7 @@ function toTitle() {
     CONFIG.ranks.map(r => r.name + " " + Array.from({length: r.tiers}, (_, i) => r.tiers - i).join("→")).join(" → ") +
     " → <b>" + CONFIG.masterRank.name + "</b>（レート解禁）";
   show("title");
-  Bgm.play("title");
+  Bgm.title();
 }
 document.querySelectorAll(".pick").forEach(btn => {
   btn.addEventListener("click", () => { Sound.unlock(); startSeason(CONFIG.modes[btn.dataset.mode]); });
@@ -1141,6 +1156,7 @@ document.querySelectorAll(".pick").forEach(btn => {
    ============================================================ */
 function startSeason(mode) {
   S.mode = mode;
+  S.seasonId++;                    // シーズンごとに BGM を引き直す
   S.streak = 0;
   S.lastResLen = -1;
   S.charaExpr = "";
@@ -1181,7 +1197,7 @@ function beginBattle() {
   el.danger.classList.remove("on");
 
   show("battle");
-  Bgm.play("battle");
+  Bgm.battle(S.mode.key, S.seasonId);
   charaShow(true, false);
   measureBar();
   S.tugRaf = requestAnimationFrame(tugFrame);
@@ -1196,7 +1212,8 @@ function resetIdle() {
 }
 
 // フェーズ → キャラの表情
-const PHASE_FACE = { clash: "normal", pinch: "surprise", rally: "happy", finish: "happy" };
+// 対戦中は normal と surprise が交互に切り替わる。win / lose は決着後にだけ使う。
+const PHASE_FACE = { clash: "normal", pinch: "surprise", rally: "normal", finish: "surprise" };
 
 function nextPhase() {
   S.phaseIdx++;
@@ -1275,7 +1292,7 @@ function toClash() {
 
   show("clash");
   charaShow(true, true);
-  charaFace("happy", true);
+  charaFace("win", true);
   el.vWin.classList.add("go");
   Sound.win();
   vibrate([0, 30, 40, 40]);
@@ -1330,7 +1347,7 @@ function toResult() {
 
   show("result");
   charaShow(true, true);
-  charaFace("happy", true);
+  charaFace("win", true);
   void el.resStreak.offsetWidth;
   el.resStreak.classList.add("go");
 
@@ -1371,7 +1388,7 @@ function toResult() {
         el.rankGlow.classList.remove("go"); void el.rankGlow.offsetWidth; el.rankGlow.classList.add("go");
         el.resCard.classList.remove("pump"); void el.resCard.offsetWidth; el.resCard.classList.add("pump");
         flash();
-        charaFace("happy", true);
+        charaFace("win", true);
 
         el.resRank.innerHTML = rankHTML(now);
         if (now.master) {
@@ -1463,8 +1480,8 @@ function endSeason() {
   el.stage.style.transform = "translate3d(0,0,0)";
   el.danger.classList.remove("on");
   charaShow(true, true);
-  charaFace("bored", true);
-  Bgm.play("result");
+  charaFace("lose", true);
+  Bgm.result(S.seasonId);
   Sound.end();
   vibrate(CONFIG.haptics.endMs);
 
