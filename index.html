@@ -221,49 +221,69 @@ body {
 .tele small { display: block; font-family: var(--font-main); font-size: 10.5px; letter-spacing: 0; opacity: .88; margin-top: 2px; }
 
 /* ================= タイトル ================= */
-/* タイトルは絵が主役。ロゴと帯は最小限にして、残り全部をキャラに渡す */
-#title { justify-content: center; gap: 8px; padding-top: max(10px, env(safe-area-inset-top)); }
+/* タイトルはロゴを大きく、その下に1体ずつのキャラ選択 */
+#title { justify-content: center; gap: 12px; padding-top: max(12px, env(safe-area-inset-top)); }
 #title-logo { text-align: center; line-height: 1.02; flex: none; }
-#title-logo .jp { font-size: clamp(22px, 6.8vw, 40px); transform: rotate(-2.5deg); display: block; }
-#title-logo .en { margin-top: 7px; font-family: var(--font-title); font-size: 9px; letter-spacing: .42em; opacity: .5; }
+#title-logo .jp { font-size: clamp(34px, 11.5vw, 72px); transform: rotate(-2.5deg); display: block; }
+#title-logo .en { margin-top: 10px; font-family: var(--font-title); font-size: 10px; letter-spacing: .42em; opacity: .5; }
+.pick-label {
+  flex: none; font-family: var(--font-title); font-size: 13px; letter-spacing: .3em;
+  color: #fff; background: var(--ink); padding: 5px 18px 6px;
+  transform: rotate(-1.5deg); clip-path: polygon(0 8%, 100% 0, 100% 92%, 0 100%);
+}
 
-/* 2枚のパネルが残りの高さを分け合う。画面の高さが変わっても自動で追従する */
-.pickers {
-  flex: 1; min-height: 0; width: 100%; max-width: 560px;
-  display: flex; flex-direction: column; gap: 9px;
+/* 横スワイプで1体ずつ切り替える */
+/* 絵は 4:3。スライドがそれより縦長になると上に白が余るので高さを頭打ちにする */
+.carousel { position: relative; flex: 1; min-height: 0; width: 100%; max-width: 560px; display: flex;
+  max-height: calc(min(100vw - 30px, 560px) * 0.80); }
+.char-track {
+  flex: 1; min-width: 0; display: flex;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  scrollbar-width: none; -ms-overflow-style: none;
+  touch-action: pan-x;                       /* 横スワイプだけ通す */
+  overscroll-behavior-x: contain;
 }
-.pick {
-  /* 絵は 4:3。パネルがそれより縦長になると上に白が余るので、その高さで頭打ちにする */
-  max-height: calc(min(100vw - 30px, 560px) * 0.79);
-  position: relative; flex: 1; min-height: 0; padding: 0; overflow: hidden;
-  background: #fff; border: 3px solid var(--ink); color: var(--ink);
-  font-family: inherit; cursor: pointer; display: block;
-  clip-path: polygon(0 0, 100% 0, 100% 90%, 94% 100%, 0 100%);
-  box-shadow: 0 5px 0 var(--ink);
-  transition: transform 90ms ease, box-shadow 90ms ease; will-change: transform;
+.char-track::-webkit-scrollbar { display: none; }
+.char-slide {
+  flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always;
+  position: relative; overflow: hidden;
+  background: #fff; border: 3px solid var(--ink);
+  clip-path: polygon(0 0, 100% 0, 100% 93%, 95% 100%, 0 100%);
 }
-.pick:nth-child(1) { transform: rotate(-1deg); }
-.pick:nth-child(2) { transform: rotate(1deg); }
-.pick:active { box-shadow: 0 0 0 var(--ink); }
-.pick:nth-child(1):active { transform: rotate(-1deg) translateY(5px); }
-.pick:nth-child(2):active { transform: rotate(1deg) translateY(5px); }
-/* 絵はパネルいっぱい。名前帯は絵の上に重ねるので、絵の高さを削らない */
-.pick .p-img {
-  width: 100%; height: 100%; display: block;
-  object-fit: contain; object-position: center bottom;
-}
-.pick .p-bar {
+.char-slide .p-img { width: 100%; height: 100%; display: block; object-fit: contain; object-position: center bottom; }
+.char-slide .p-bar {
   position: absolute; left: 0; right: 0; bottom: 0;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
-  padding: 7px 11px 8px; text-align: left;
+  padding: 9px 13px 11px; text-align: left;
   background: linear-gradient(180deg, rgba(43,31,36,0) 0%, rgba(43,31,36,.82) 42%, var(--ink) 100%);
   color: #fff;
 }
-.pick .p-name { font-family: var(--font-title); font-size: clamp(18px, 5.6vw, 26px); font-weight: 900; line-height: 1.1; }
-.pick .p-desc { font-size: 10px; line-height: 1.5; opacity: .8; margin-top: 2px; }
-.pick .p-best { font-family: var(--font-title); font-size: 10px; text-align: right; white-space: nowrap; opacity: .9; }
-.pick .p-best .b-n { font-size: 20px; color: #ffd447; }
-.pick .p-best .b-r { font-size: 9.5px; opacity: .8; }
+.char-slide .p-name { font-family: var(--font-title); font-size: clamp(21px, 6.6vw, 32px); font-weight: 900; line-height: 1.1; }
+.char-slide .p-desc { font-size: 11px; line-height: 1.5; opacity: .85; margin-top: 3px; }
+.char-slide .p-best { font-family: var(--font-title); font-size: 10px; text-align: right; white-space: nowrap; opacity: .9; }
+.char-slide .p-best .b-n { font-size: 22px; color: #ffd447; }
+.char-slide .p-best .b-r { font-size: 9.5px; opacity: .8; }
+
+.nav {
+  position: absolute; top: 50%; z-index: 3;
+  width: 34px; height: 44px; margin-top: -22px; padding: 0;
+  display: grid; place-items: center;
+  font-family: var(--font-title); font-size: 15px; color: var(--ink);
+  background: rgba(255,255,255,.94); border: 3px solid var(--ink); cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink);
+}
+.nav:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+.nav.prev { left: -4px; }
+.nav.next { right: -4px; }
+
+.dots { flex: none; display: flex; gap: 8px; justify-content: center; }
+.dots i {
+  width: 9px; height: 9px; background: #fff;
+  border: 2px solid var(--ink); border-radius: 50%;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.dots i.on { background: var(--me); transform: scale(1.25); }
 
 .av {
   width: 34px; height: 34px; flex: none; border-radius: 50%;
@@ -272,8 +292,6 @@ body {
 }
 .av.foe { background: var(--foe); color: var(--ink); }
 
-.ladder-peek { font-family: var(--font-title); font-size: 10px; line-height: 1.85; opacity: .58; text-align: center; }
-.ladder-peek b { color: var(--me); opacity: 1; }
 .foot-note { font-size: 10px; opacity: .5; text-align: center; line-height: 1.75; }
 
 /* ================= バトル ================= */
@@ -326,7 +344,7 @@ body {
 }
 
 /* ================= 決着カット ================= */
-#clash { justify-content: center; gap: 0; }
+#clash { justify-content: center; gap: 0; padding-bottom: calc(var(--chara-w-mini) * 0.75 + 54px); }
 .clash-half { width: 100%; flex: 1; display: flex; flex-direction: column;
               align-items: center; justify-content: center; gap: 11px; position: relative; }
 .clash-half.loser { opacity: .5; }
@@ -345,7 +363,8 @@ body {
               transform: rotate(-4deg); }
 
 /* ================= リザルト ================= */
-#result { gap: 2vh; }
+/* 下から生えるキャラのぶんを空けて、内容を上へ寄せる */
+#result { gap: 2vh; padding-bottom: calc(var(--chara-w-mini) * 0.75 + 62px); }
 #res-streak { font-size: clamp(34px, 12vw, 74px); text-align: center; opacity: 0; will-change: transform, opacity; }
 #res-streak small { font-size: .42em; }
 #res-streak.go { animation: slam 500ms cubic-bezier(.15,1.5,.35,1) forwards; }
@@ -451,10 +470,10 @@ body {
 /* 細い端末（320px 幅）でボタンが折り返しても潰れないように */
 @media (max-width: 360px) {
   .btn { font-size: 12.5px; padding: 12px 16px; }
-  .pick { width: 44vw; }
+
 }
 /* タップ対象は最低 44px 確保（Apple HIG / Material 双方の下限） */
-.btn, .pick { min-height: 44px; }
+.btn, .nav { min-height: 44px; }
 </style>
 </head>
 <body>
@@ -492,31 +511,38 @@ body {
       <div class="en">SUGAR CAGE RATING</div>
     </div>
 
-    <!-- 絵を主役にしたキャラクターセレクト。2枚のパネルが残りの高さを分け合う -->
-    <div class="pickers">
-      <button class="pick" data-mode="rako">
-        <img class="p-img" src="images/characters/rako_normal.png" alt="ラコ" onerror="this.remove()">
-        <div class="p-bar">
-          <div class="p-left">
-            <div class="p-name">ラコ</div>
-            <div class="p-desc">押し合いが長く、深く沈む</div>
+    <div class="pick-label">えらんで</div>
+
+    <!-- 1体ずつ表示。横スワイプで切り替える（scroll-snap） -->
+    <div class="carousel">
+      <button class="nav prev" id="nav-prev" aria-label="前のキャラ">◀</button>
+      <div class="char-track" id="char-track">
+        <div class="char-slide" data-mode="rako">
+          <img class="p-img" src="images/characters/rako_normal.png" alt="ラコ" onerror="this.remove()">
+          <div class="p-bar">
+            <div>
+              <div class="p-name">ラコ</div>
+              <div class="p-desc">めっちゃゲーマー</div>
+            </div>
+            <div class="p-best" data-best="rako">BEST 0</div>
           </div>
-          <div class="p-best" data-best="rako">BEST 0</div>
         </div>
-      </button>
-      <button class="pick" data-mode="ou">
-        <img class="p-img" src="images/characters/ou_normal.png" alt="オウ" onerror="this.remove()">
-        <div class="p-bar">
-          <div class="p-left">
-            <div class="p-name">オウ</div>
-            <div class="p-desc">淡々と短く押し切る</div>
+        <div class="char-slide" data-mode="ou">
+          <img class="p-img" src="images/characters/ou_normal.png" alt="オウ" onerror="this.remove()">
+          <div class="p-bar">
+            <div>
+              <div class="p-name">オウ</div>
+              <div class="p-desc">エンジョイにしてはうまい</div>
+            </div>
+            <div class="p-best" data-best="ou">BEST 0</div>
           </div>
-          <div class="p-best" data-best="ou">BEST 0</div>
         </div>
-      </button>
+      </div>
+      <button class="nav next" id="nav-next" aria-label="次のキャラ">▶</button>
     </div>
 
-    <div class="ladder-peek" id="ladder-peek"></div>
+    <div class="dots" id="dots"><i class="on"></i><i></i></div>
+    <button class="btn" id="btn-start">このキャラで はじめる</button>
   </section>
 
   <!-- ============ バトル ============ -->
@@ -677,6 +703,8 @@ const CONFIG = {
   modes: {
     ou: {
       name: "オウ", key: "ou", initial: "オ", badge: "#7c4dff",
+      desc: "エンジョイにしてはうまい",
+      pop: { base: "推" },            // タップで飛ぶ文字
       tapPower: 0.030,
       script: [
         { key: "clash",  target:  0.08, ms:  900 },
@@ -687,6 +715,11 @@ const CONFIG = {
     },
     rako: {
       name: "ラコ", key: "rako", initial: "ラ", badge: "#ff2d78",
+      desc: "めっちゃゲーマー",
+      // 1タップで押し切りまで持っていく。ゲーマーなので勝負にならない
+      oneTapWin: true, oneTapMs: 460,
+      // 連勝が伸びるほど「圧」が混ざる
+      pop: { base: "押", late: "圧", lateFrom: 6, lateSpan: 24, lateMax: 0.65 },
       tapPower: 0.045,
       script: [
         { key: "clash",  target:  0.12, ms: 1100 },
@@ -779,7 +812,14 @@ const CONFIG = {
   beyondMode: "exponential",
   beyondMemes: ["無量大数の彼方", "計測不能", "画面に入りません", "そういう数", "数える人が居ない"],
 
-  ranking: { participantsBase: 4180000, perStreak: 137 },
+  /* ---- 全国ランキング ----
+     ワザンボンクラスに到達するまでは出さない（そこまでは順位を語る意味がない）。
+     到達後は 10万人の母集団を想定し、1勝ごとに順位が decay 倍ずつ上がっていく。 */
+  ranking: {
+    totalPlayers: 100000,
+    rankAtMaster: 10000,     // 到達した時点の順位（＝上位10%）
+    decayPerWin: 0.85        // 1勝ごとにこの割合まで順位が上がる
+  },
 
   npcs: ["シロップ","カラメル","ペコ","ミント","ハッカ","ヌガー","マカロン","タルト",
          "アイシング","プリン","ワッフル","ゼリー","ラムネ","コンペイ","ミルフィ","ビスケ",
@@ -1064,7 +1104,7 @@ const el = {
   stage: $("stage"), danger: $("danger"), soundBtn: $("sound-btn"),
   chara: $("chara"), charaImg: $("chara-img"), charaPh: $("chara-ph"),
   phFace: $("ph-face"), phName: $("ph-name"), phTag: $("ph-tag"), phTop: $("ph-top"),
-  ladderPeek: $("ladder-peek"),
+  charTrack: $("char-track"), dots: $("dots"),
 
   npcAvatar: $("npc-avatar"), npcName: $("npc-name"), npcTitle: $("npc-title"),
   meAvatar: $("me-avatar"), meName: $("me-name"), meTitle: $("me-title"),
@@ -1217,15 +1257,36 @@ function toTitle() {
                   (b >= 2 ? "連勝" : "勝") +
                   '<br><span class="b-r">' + rankLabel(progressOf(b)) + "</span>";
   });
-  el.ladderPeek.innerHTML =
-    CONFIG.ranks.map(r => r.name + " " + Array.from({length: r.tiers}, (_, i) => r.tiers - i).join("→")).join(" → ") +
-    " → <b>" + CONFIG.masterRank.name + "</b>（レート解禁）";
   show("title");
   Bgm.title();
 }
-document.querySelectorAll(".pick").forEach(btn => {
-  btn.addEventListener("click", () => { Sound.unlock(); startSeason(CONFIG.modes[btn.dataset.mode]); });
+
+/* ---- キャラ選択カルーセル（1体表示・横スワイプ） ---- */
+const slides = Array.from(document.querySelectorAll(".char-slide"));
+let charIdx = 0;
+function setChar(i, smooth) {
+  charIdx = Math.max(0, Math.min(slides.length - 1, i));
+  const t = el.charTrack;
+  t.style.scrollBehavior = smooth === false ? "auto" : "smooth";
+  t.scrollTo({ left: charIdx * t.clientWidth });
+  Array.from(el.dots.children).forEach((d, n) => d.classList.toggle("on", n === charIdx));
+}
+// スワイプで止まった位置から現在のキャラを割り出す
+el.charTrack.addEventListener("scroll", () => {
+  const w = el.charTrack.clientWidth;
+  if (!w) return;
+  const i = Math.round(el.charTrack.scrollLeft / w);
+  if (i === charIdx) return;
+  charIdx = i;
+  Array.from(el.dots.children).forEach((d, n) => d.classList.toggle("on", n === charIdx));
+}, { passive: true });
+$("nav-prev").addEventListener("click", () => { Sound.button(); setChar(charIdx - 1); });
+$("nav-next").addEventListener("click", () => { Sound.button(); setChar(charIdx + 1); });
+$("btn-start").addEventListener("click", () => {
+  Sound.unlock(); Sound.button();
+  startSeason(CONFIG.modes[slides[charIdx].dataset.mode]);
 });
+window.addEventListener("resize", () => { if (S.state === "title") setChar(charIdx, false); });
 
 /* ============================================================
    シーズン開始
@@ -1318,6 +1379,21 @@ function onTap() {
   shake();
   popPlus();
   resetIdle();
+
+  // ラコは1タップで押し切りまで持っていく（勝負にならないのが持ち味）
+  if (S.mode.oneTapWin && S.taps === 1) {
+    clearSeq();
+    S.phaseIdx = S.script.length - 1;                 // 押し切りフェーズ扱いにする
+    const ph = S.script[S.phaseIdx];
+    el.phaseCry.textContent = CONFIG.cries[ph.key];
+    el.phaseCry.classList.remove("beat"); void el.phaseCry.offsetWidth; el.phaseCry.classList.add("beat");
+    charaSay(pick(CONFIG.talk[S.mode.key][ph.key]));
+    charaFace(PHASE_FACE[ph.key], true);
+    Sound.phase(ph.key);
+    tugTo(1, S.mode.oneTapMs);
+    paintTug(Tug.base);
+    seq(S.mode.oneTapMs, toClash);
+  }
 }
 
 function shake() {
@@ -1340,9 +1416,17 @@ const popPool = (() => {
   let idx = 0;
   return () => { const d = pool[idx]; idx = (idx + 1) % pool.length; return d; };
 })();
+/* タップで飛ぶ文字。ラコは連勝が伸びるほど「圧」が混ざる */
+function popChar() {
+  const p = S.mode.pop || { base: "押" };
+  if (!p.late) return p.base;
+  const t = (S.streak - p.lateFrom) / p.lateSpan;
+  const rate = Math.max(0, Math.min(p.lateMax, t * p.lateMax));
+  return Math.random() < rate ? p.late : p.base;
+}
 function popPlus() {
   const d = popPool();
-  d.textContent = "押";
+  d.textContent = popChar();
   d.style.setProperty("--dx", ((Math.random() * 2 - 1) * 70).toFixed(0) + "px");
   d.classList.remove("go"); void d.offsetWidth; d.classList.add("go");
 }
@@ -1567,22 +1651,33 @@ function endSeason() {
   if (isNew) { best[S.mode.key] = streak; saveBest(); }
   el.newRecord.style.display = isNew && streak > 0 ? "" : "none";
 
-  const rk = fakeRanking(streak);
+  const rk = nationalRank(streak);
   el.seasonTitle.textContent = new Date().getFullYear() + " SEASON 最終成績";
 
   el.fRank.textContent = rankLabel(p);
   el.fStreakKey.textContent = streak >= 2 ? "最高連勝" : "勝利数";
   el.fStreak.textContent = streak.toLocaleString("en-US");
   el.fRate.textContent = p.master ? rateStringFor(p.mw) : "— （" + CONFIG.masterRank.name + "未到達）";
-  el.fRankPos.textContent = "全国 " + rk.rank.toLocaleString("en-US") + " 位";
-  el.fParticipants.textContent = "参加者 " + rk.participants.toLocaleString("en-US") + " 人中";
+  if (rk) {
+    el.fRankPos.textContent = "全国 " + rk.rank.toLocaleString("en-US") + " 位";
+    el.fParticipants.textContent = rk.total.toLocaleString("en-US") + " 人中 ／ " + pctLabel(rk.pct);
+  } else {
+    el.fRankPos.textContent = "— 位";
+    el.fParticipants.textContent = CONFIG.masterRank.name + " 到達で解禁";
+  }
   charaSay(pick(CONFIG.talk[S.mode.key].end));   // セリフはキャラの吹き出しから
   show("final");
 }
-function fakeRanking(streak) {
-  const participants = CONFIG.ranking.participantsBase + streak * CONFIG.ranking.perStreak + (streak * streak) % 997;
-  return { participants, rank: participants - (streak % 7) - 1 };
+/* ワザンボンクラス未到達なら null。到達後はレートが上がるほど順位が上がる。 */
+function nationalRank(streak) {
+  const p = progressOf(streak);
+  if (!p.master) return null;
+  const R = CONFIG.ranking;
+  const raw = R.rankAtMaster * Math.pow(R.decayPerWin, p.mw);
+  const rank = Math.max(1, Math.min(R.totalPlayers, Math.round(raw)));
+  return { rank, total: R.totalPlayers, pct: (rank / R.totalPlayers) * 100 };
 }
+function pctLabel(pct) { return pct < 0.01 ? "上位 0.01% 未満" : "上位 " + pct.toFixed(2) + "%"; }
 
 $("btn-next").addEventListener("click", () => { Sound.button(); if (S.state === "result") nextBattle(); });
 $("btn-quit").addEventListener("click", () => { Sound.button(); if (S.state === "result") endSeason(); });
@@ -1598,7 +1693,7 @@ function shareCard() {
   const W = c.width, H = c.height;
   const streak = S.streak;
   const p = progressOf(streak);
-  const rk = fakeRanking(streak);
+  const rk = nationalRank(streak);
   const base = ["#fce4ec","#ffe4c4","#d6f3fb","#ffd6ef","#ffd98a","#ffb07a","#d8b6ff"][bgIndexOf(streak)];
   const INK = "#2b1f24", ME = "#ff2d78", FOE = "#16d2c3";
 
@@ -1636,10 +1731,15 @@ function shareCard() {
     g.fillText(CONFIG.masterRank.name + " 未到達", W / 2, 420);
   }
 
-  g.fillStyle = INK; g.font = "900 46px " + F;
-  g.fillText("全国 " + rk.rank.toLocaleString("en-US") + " 位", W / 2, 506);
-  g.font = "24px " + F; g.globalAlpha = .7;
-  g.fillText("参加者 " + rk.participants.toLocaleString("en-US") + " 人中", W / 2, 546);
+  if (rk) {
+    g.fillStyle = INK; g.font = "900 46px " + F;
+    g.fillText("全国 " + rk.rank.toLocaleString("en-US") + " 位", W / 2, 506);
+    g.font = "24px " + F; g.globalAlpha = .7;
+    g.fillText(rk.total.toLocaleString("en-US") + " 人中 ／ " + pctLabel(rk.pct), W / 2, 546);
+  } else {
+    g.fillStyle = INK; g.font = "24px " + F; g.globalAlpha = .7;
+    g.fillText("全国ランキングは " + CONFIG.masterRank.name + " 到達で解禁", W / 2, 520);
+  }
   g.font = "22px " + F; g.globalAlpha = .5;
   g.fillText("しゅがけレーティング", W / 2, 592);
   g.globalAlpha = 1;
