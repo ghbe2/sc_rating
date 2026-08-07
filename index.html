@@ -90,7 +90,7 @@ body {
 #chara-talk {
   position: relative;
   margin: 0 12px 14px;
-  max-width: min(74vw, 330px);
+  max-width: min(78vw, 340px);
   background: #fff; border: 3px solid var(--ink);
   padding: 8px 12px; font-size: 12.5px; line-height: 1.55;
   opacity: 0; transform: translateY(6px) scale(.96); transform-origin: bottom left;
@@ -112,13 +112,13 @@ body {
 
 #chara {
   position: relative;
-  width: min(46vw, 250px);
+  width: min(92vw, 480px);
   opacity: 0; transform: translate3d(-8px, 16px, 0);
   transition: opacity 300ms ease, transform 300ms ease, width 300ms ease;
   will-change: transform, opacity;
 }
 #chara.on { opacity: 1; transform: translate3d(0,0,0); }
-#chara.mini { width: min(30vw, 150px); opacity: .95; }
+#chara.mini { width: min(62vw, 330px); opacity: .95; }
 /* クラス名は .pop（タップ粒子）と衝突させないこと。あちらは position:absolute; top:50% を持つ */
 #chara.bump { animation: charapop 420ms cubic-bezier(.2,1.6,.4,1); }
 @keyframes charapop { 0% { transform: scale(.86) translateY(10px);} 60% { transform: scale(1.05);} 100% { transform: scale(1);} }
@@ -219,6 +219,10 @@ body {
 .pick:nth-child(1):active { transform: rotate(-1.8deg) translateY(5px); }
 .pick:nth-child(2):active { transform: rotate(1.8deg) translateY(5px); }
 .pick .av { width: 46px; height: 46px; margin: 0 auto 8px; }
+.pick .p-img {
+  width: 100%; display: block; margin: -6px 0 4px;
+  aspect-ratio: 4 / 3; object-fit: contain; object-position: bottom center;
+}
 .pick .p-name { font-family: var(--font-title); font-size: 19px; font-weight: 900; }
 .pick .p-desc { margin-top: 5px; font-size: 10px; line-height: 1.6; opacity: .68; }
 .pick .p-best { margin-top: 8px; font-family: var(--font-title); font-size: 10px; color: var(--me); }
@@ -264,7 +268,7 @@ body {
 #phase-cry.beat { animation: cryin 380ms cubic-bezier(.2,1.5,.4,1); }
 @keyframes cryin { 0% { opacity: .2; transform: rotate(-3deg) scale(1.35);} 100% { opacity: 1; transform: rotate(-3deg) scale(1);} }
 #tap-count { margin-top: 12px; font-family: var(--font-title); font-size: 14px; opacity: .72; text-align: center; }
-.streak-mini { width: 100%; max-width: 560px; text-align: right; font-family: var(--font-title); font-size: 11px; opacity: .65; }
+.streak-mini { width: 100%; max-width: 560px; text-align: center; margin-top: 8px; font-family: var(--font-title); font-size: 11px; opacity: .65; }
 .streak-mini .n { font-size: 16px; color: var(--me); opacity: 1; }
 
 .pop {
@@ -376,7 +380,7 @@ body {
 
 /* ================= スマホ最適化 ================= */
 /* 最終成績はスクロールするので、左下のキャラに最後の要素が潜り込まないよう逃がす */
-#final { padding-bottom: calc(min(30vw, 150px) * 0.75 + 92px); }  /* 左下のキャラ＋吹き出しを避ける */
+#final { padding-bottom: calc(min(62vw, 330px) * 0.75 + 92px); }  /* 左下のキャラ＋吹き出しを避ける */
 
 /* 縦が短い端末（iPhone SE 等 667px 以下）: 余白と文字を詰める */
 @media (max-height: 700px) {
@@ -388,7 +392,7 @@ body {
   .card { padding: 11px 11px 13px; gap: 7px; }
   .tug { height: 30px; }
   #tug-knob { height: 42px; }
-  #chara { width: min(38vw, 210px); }
+  #chara { width: min(80vw, 400px); }
   #tap-count { margin-top: 8px; }
   #talk { margin-top: 6px; }
 }
@@ -449,13 +453,13 @@ body {
 
     <div class="pickers">
       <button class="pick" data-mode="rako">
-        <div class="av" style="background:#ff2d78">ラ</div>
+        <img class="p-img" src="images/characters/rako_normal.png" alt="ラコ" onerror="this.remove()">
         <div class="p-name">ラコ</div>
         <div class="p-desc">押し合いが長く深く沈む<br>逆転が派手</div>
         <div class="p-best" data-best="rako">BEST 0</div>
       </button>
       <button class="pick" data-mode="ou">
-        <div class="av" style="background:#7c4dff">オ</div>
+        <img class="p-img" src="images/characters/ou_normal.png" alt="オウ" onerror="this.remove()">
         <div class="p-name">オウ</div>
         <div class="p-desc">淡々と短く押し切る<br>ピンチも浅い</div>
         <div class="p-best" data-best="ou">BEST 0</div>
@@ -501,6 +505,8 @@ body {
         <span class="m"><span id="pct-me-name">自分</span> <span id="pct-me">50%</span></span>
         <span class="f"><span id="pct-foe-name">相手</span> <span id="pct-foe">50%</span></span>
       </div>
+      <!-- 画面下部はキャラが大きく占めるので、連勝表示はバーの直下に置く -->
+      <div class="streak-mini" id="streak-mini">1戦目</div>
     </div>
 
     <div class="battle-mid">
@@ -510,8 +516,6 @@ body {
       </div>
     </div>
 
-    <!-- 左下はキャラの定位置。連勝表示は右下へ逃がす -->
-    <div class="streak-mini" id="streak-mini">1戦目</div>
   </section>
 
   <!-- ============ 決着カット ============ -->
@@ -574,7 +578,7 @@ body {
     <div id="new-record" style="display:none">★ 自己ベスト更新 ★</div>
 
     <div class="card sheet">
-      <div class="row"><span class="k">到達階級</span><span class="v big" id="f-rank">グラニュー級 3</span></div>
+      <div class="row"><span class="k">到達クラス</span><span class="v big" id="f-rank">グラニュクラス 3</span></div>
       <div class="row"><span class="k" id="f-streak-key">勝利数</span><span class="v" id="f-streak">0</span></div>
       <div class="row"><span class="k">最終レート</span><span class="v" id="f-rate">—</span></div>
       <div class="rank-block">
@@ -606,19 +610,19 @@ body {
 const CONFIG = {
   idleEndMs: 3000,          /* 手がこの時間止まったらシーズン終了。唯一の終了条件 */
 
-  /* ---- ラダー: 4階級 × 3ティア。番号は 3 → 2 → 1 と小さくなる ---- */
+  /* ---- ラダー: 4クラス × 3ティア。番号は 3 → 2 → 1 と小さくなる ---- */
   ranks: [
-    { name: "グラニュー級", en: "GRANULATED", tiers: 3 },
-    { name: "ザラメ級",     en: "COARSE",     tiers: 3 },
-    { name: "氷砂糖級",     en: "ROCK",       tiers: 3 },
-    { name: "金平糖級",     en: "KONPEITO",   tiers: 3 }
+    { name: "グラニュクラス", en: "GRANULATED", tiers: 3 },
+    { name: "ザラメクラス",   en: "COARSE",     tiers: 3 },
+    { name: "カラメルクラス", en: "CARAMEL",    tiers: 3 },
+    { name: "フォンダンクラス", en: "FONDANT",  tiers: 3 }
   ],
-  masterRank: { name: "糖蜜級", en: "MOLASSES" },
+  masterRank: { name: "ワザンボンクラス", en: "WASANBON" },
   /* 通算ティア番号 → 昇格に必要なポイント。最初の2ティアは4、以降は5 */
   tierCost: (flatTierIdx) => flatTierIdx <= 1 ? 4 : 5,
-  /* 連勝ボーナス: この連勝数から獲得ポイントが2倍 */
-  bonusFromStreak: 3,
-  bonusMultiplier: 2,
+  /* 連勝ボーナス: [この連勝数から, 獲得ポイント倍率] を昇順で。
+     3連勝目から2倍、7連勝目から3倍。段を足したいときはここに追記する。 */
+  bonusTiers: [[1, 1], [3, 2], [7, 3]],
 
   rateBase: 10,
   rateMultiplier: 2,
@@ -718,8 +722,8 @@ const CONFIG = {
     volume: 0.35,
     title:  ["opening.mp3"],
     battle: {
-      rako: ["rako_battle01.mp3", "rako_battle02.mp3"],
-      ou:   ["ou_battle01.mp3",   "ou_battle02.mp3"]
+      rako: ["rako_battle01.mp3", "rako_battle02.mp3", "rako_battle03.mp3", "rako_battle04.mp3", "rako_battle05.mp3"],
+      ou:   ["ou_battle01.mp3",   "ou_battle02.mp3",   "ou_battle03.mp3",   "ou_battle04.mp3",   "ou_battle05.mp3"]
     },
     result: []     // 最終成績。ファイルを入れるとここで鳴る
   },
@@ -746,8 +750,8 @@ const CONFIG = {
       rally:  ["ここだ!!ここ!!","戻った!戻ったって!!","乗ってきた乗ってきた!!"],
       finish: ["持ってけーっ!!","押し切るーっ!!","うおおおお!!"],
       win:    ["うおおお伸びた!!","ヤバい止まんない!!","次いこ次!!","こんなん笑うって!!"],
-      promo:  ["甘くなってる!ラコ甘くなってるって!!","うわ階級上がった!!","そこ!そこ抜けた!!"],
-      master: ["糖蜜!?一番ドロドロのやつ!!"],
+      promo:  ["甘くなってる!ラコ甘くなってるって!!","うわクラス上がった!!","そこ!そこ抜けた!!"],
+      master: ["ワザンボン!?一番いいやつじゃん!!"],
       end:    ["……あー、ここまでかぁ!","いや今の、悪くなかったって。","手が止まった。それだけの話。","ここがラコの限界だった。次いこ、次。"]
     },
     ou: {
@@ -756,8 +760,8 @@ const CONFIG = {
       rally:  ["戻しました。","反転を確認。","…そろそろですね。"],
       finish: ["決めます。","終了させます。","押し切ります。"],
       win:    ["…はい。","記録を更新しました。","次。","…まだ増えます。"],
-      promo:  ["甘さレベルが上がりました。","等級を更新。","…濃度が上がりましたね。"],
-      master: ["糖蜜級に到達。ここから数字が意味を失います。"],
+      promo:  ["甘さレベルが上がりました。","クラスを更新。","…濃度が上がりましたね。"],
+      master: ["ワザンボンクラスに到達。ここから数字が意味を失います。"],
       end:    ["…停止を確認。","終了。おつかれさまでした。","以上が今シーズンの成績です。","数字は残りました。それで十分です。"]
     }
   }
@@ -768,15 +772,26 @@ const CONFIG = {
    連勝ボーナスがあっても累積ポイントは総勝利数の純粋関数。
    ============================================================ */
 // n 勝目に入るポイント
-function gainAt(n) { return n >= CONFIG.bonusFromStreak ? CONFIG.bonusMultiplier : 1; }
-// 総勝利数 → 累積ポイント（= Σ gainAt）
+function gainAt(n) {
+  let m = 1;
+  for (const [from, mult] of CONFIG.bonusTiers) if (n >= from) m = mult;
+  return m;
+}
+// 総勝利数 → 累積ポイント（= Σ gainAt）。段が増えても O(段数) で閉じた形で出す
 function pointsOf(wins) {
-  const b = CONFIG.bonusFromStreak - 1;              // 等倍で入る勝利数
-  if (wins <= b) return wins;
-  return b + (wins - b) * CONFIG.bonusMultiplier;
+  if (wins <= 0) return 0;
+  const t = CONFIG.bonusTiers;
+  let pts = 0;
+  for (let i = 0; i < t.length; i++) {
+    const from = t[i][0];
+    if (wins < from) break;
+    const to = (i + 1 < t.length) ? t[i + 1][0] - 1 : Infinity;
+    pts += (Math.min(wins, to) - from + 1) * t[i][1];
+  }
+  return pts;
 }
 
-// ティアをフラットに展開（番号は各階級内で tiers → 1 と下がる）
+// ティアをフラットに展開（番号は各クラス内で tiers → 1 と下がる）
 const TIERS = [];
 CONFIG.ranks.forEach((r, ri) => {
   for (let t = 0; t < r.tiers; t++) TIERS.push({ rankIdx: ri, label: r.tiers - t });
@@ -784,7 +799,7 @@ CONFIG.ranks.forEach((r, ri) => {
 TIERS.forEach((t, i) => { t.cost = CONFIG.tierCost(i); });
 const CUM = []; { let acc = 0; TIERS.forEach(t => { CUM.push(acc); acc += t.cost; }); }
 const MASTER_POINTS = CUM[CUM.length - 1] + TIERS[TIERS.length - 1].cost;
-// 糖蜜級に到達する勝利数
+// 最上位クラスに到達する勝利数
 const MASTER_AT_WINS = (() => { let w = 0; while (pointsOf(w) < MASTER_POINTS) w++; return w; })();
 
 function progressOf(wins) {
@@ -899,23 +914,37 @@ const Sfx = (() => {
 
 /* ---- BGM 層 ---- */
 const Bgm = (() => {
-  let cur = null, curId = "";
-  /* id が同じあいだは同じ曲を鳴らし続ける。id が変わったときだけ選び直す。 */
+  let cur = null, curId = "", lastFile = "";
+  /* 1曲鳴り終わったら次の曲へ（ループさせない）。同じ曲が続かないように選ぶ。 */
+  function pickNext(list) {
+    if (list.length === 1) return list[0];
+    let f;
+    do { f = list[Math.floor(Math.random() * list.length)]; } while (f === lastFile);
+    return f;
+  }
+  function startTrack(id, list) {
+    if (curId !== id) return;                 // 場面が変わっていたら何もしない
+    const file = pickNext(list);
+    lastFile = file;
+    const a = new Audio(CONFIG.bgm.dir + file);
+    a.loop = false;                            // 曲が終わったら次を鳴らす
+    a.volume = CONFIG.bgm.volume;
+    a.addEventListener("ended", () => { if (cur === a) startTrack(id, list); });
+    a.addEventListener("error", () => { if (cur === a) cur = null; }, { once: true });
+    a.play().then(() => { cur = a; }).catch(() => {});
+  }
+  /* id が同じあいだは鳴らしっぱなし。id が変わったときだけ切り替える。 */
   function playList(id, list) {
     if (!CONFIG.bgm.enabled) return;
     if (id === curId) return;
     if (cur) { cur.pause(); cur = null; }
     curId = id;
     if (!list || !list.length) return;
-    const file = list[Math.floor(Math.random() * list.length)];
-    const a = new Audio(CONFIG.bgm.dir + file);
-    a.loop = true; a.volume = CONFIG.bgm.volume;
-    a.addEventListener("error", () => { if (cur === a) cur = null; }, { once: true });
-    a.play().then(() => { cur = a; }).catch(() => {});
+    startTrack(id, list);
   }
   return {
     title()  { playList("title", CONFIG.bgm.title); },
-    // シーズンごとに1曲選ぶ。seasonId が変わると引き直される。
+    // バトル〜決着〜リザルトはひと続き。シーズン中は鳴らし続ける。
     battle(modeKey, seasonId) { playList("battle:" + modeKey + ":" + seasonId, CONFIG.bgm.battle[modeKey]); },
     result(seasonId) { playList("result:" + seasonId, CONFIG.bgm.result); },
     stop() { if (cur) { cur.pause(); cur = null; } curId = ""; }
@@ -1372,7 +1401,7 @@ function toResult() {
     const to = promoting ? 1 : now.pip / now.need;
     const label = promoting ? prev.need + " / " + prev.need : now.pip + " / " + now.need;
     seq(t, () => {
-      el.resGain.textContent = "+" + gain + (bonus ? "  連勝ボーナス ×" + CONFIG.bonusMultiplier : "");
+      el.resGain.textContent = "+" + gain + (bonus ? "  連勝ボーナス ×" + gain : "");
       el.resGain.classList.add("on");
       if (bonus) { el.resGain.classList.add("x2"); Sound.bonus(); }
       setGauge(el.rankGauge, to, CONFIG.fx.gaugeMs);
@@ -1392,7 +1421,7 @@ function toResult() {
 
         el.resRank.innerHTML = rankHTML(now);
         if (now.master) {
-          el.promoBanner.innerHTML = "糖蜜級 到達<b>!!</b><small>RATING 解禁</small>";
+          el.promoBanner.innerHTML = CONFIG.masterRank.name + " 到達<b>!!</b><small>RATING 解禁</small>";
           el.rankGauge.parentElement.style.display = "none";
           el.resGain.style.display = "none";
           el.resRateBlock.style.display = "flex";
@@ -1403,7 +1432,7 @@ function toResult() {
           Sound.master();
           vibrate([0, 40, 60, 40, 60, 120]);
         } else {
-          el.promoBanner.innerHTML = (kind === "rankup" ? "階級昇格" : "甘さレベル上昇") +
+          el.promoBanner.innerHTML = (kind === "rankup" ? "クラス昇格" : "甘さレベル上昇") +
             "<b>!!</b><small>" + rankLabel(prev) + " → " + rankLabel(now) + "</small>";
           setTicks(el.rankTicks, now.need);
           // 余ったポイントは次のティアに繰り越す
@@ -1497,7 +1526,7 @@ function endSeason() {
   el.fRank.textContent = rankLabel(p);
   el.fStreakKey.textContent = streak >= 2 ? "最高連勝" : "勝利数";
   el.fStreak.textContent = streak.toLocaleString("en-US");
-  el.fRate.textContent = p.master ? rateStringFor(p.mw) : "— （糖蜜級未到達）";
+  el.fRate.textContent = p.master ? rateStringFor(p.mw) : "— （" + CONFIG.masterRank.name + "未到達）";
   el.fRankPos.textContent = "全国 " + rk.rank.toLocaleString("en-US") + " 位";
   el.fParticipants.textContent = "参加者 " + rk.participants.toLocaleString("en-US") + " 人中";
   charaSay(pick(CONFIG.talk[S.mode.key].end));   // セリフはキャラの吹き出しから
@@ -1557,7 +1586,7 @@ function shareCard() {
     outText("RATE " + rateStr, 424, rateStr.length > 18 ? 40 : 56, FOE);
   } else {
     g.fillStyle = INK; g.font = "36px " + F;
-    g.fillText("糖蜜級 未到達", W / 2, 420);
+    g.fillText(CONFIG.masterRank.name + " 未到達", W / 2, 420);
   }
 
   g.fillStyle = INK; g.font = "900 46px " + F;
@@ -1598,7 +1627,25 @@ window.addEventListener("keydown", (e) => {
   if (S.state === "battle") { e.preventDefault(); onTap(); }
   else if (S.state === "clash" || S.state === "result") e.preventDefault();
 });
-document.addEventListener("gesturestart", (e) => e.preventDefault());
+/* ---- 拡大縮小の抑止 ----
+   iOS Safari は viewport の user-scalable=no を無視するので JS でも塞ぐ。
+   ・gesture* … iOS のピンチ
+   ・touchmove（2本指） … ピンチの保険
+   ・dblclick / 素早い2連タップ … ダブルタップズーム
+   （通常のタップは touch-action: manipulation が既に処理している） */
+["gesturestart", "gesturechange", "gestureend"].forEach(t =>
+  document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
+document.addEventListener("touchmove", (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+document.addEventListener("dblclick", (e) => e.preventDefault(), { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener("touchend", (e) => {
+  const now = Date.now();
+  // ボタン上では絶対に preventDefault しない。合成 click が消えて反応しなくなるため。
+  if (!e.target.closest("button") && now - lastTouchEnd <= 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
 document.addEventListener("contextmenu", (e) => { if (S.state !== "title" && S.state !== "final") e.preventDefault(); });
 
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
